@@ -3,11 +3,52 @@ function Write-OptionalDevelopmentToolDivider {
 }
 
 function Get-OptionalToolResultMark {
-    if (Get-Command Get-DevToolsDisplaySymbol -ErrorAction SilentlyContinue) {
-        return Get-DevToolsDisplaySymbol -Name 'success-mark'
+    return '*'
+}
+
+function Get-DevEnvironmentStatusSymbol {
+    param(
+        [Parameter(Mandatory = $true)][bool]$Installed,
+        [Parameter(Mandatory = $true)][bool]$Required
+    )
+
+    if ($Installed) {
+        return '*'
     }
 
-    return '*'
+    if ($Required) {
+        return 'x'
+    }
+
+    return 'o'
+}
+
+function Show-DevelopmentEnvironmentSummary {
+    Write-Host ''
+    Write-Host 'Development Environment' -ForegroundColor Cyan
+    Write-Host ''
+
+    $gitInstalled = Test-CommandExists 'git'
+    $ghInstalled = Test-CommandExists 'gh'
+    $psaInstalled = [bool](Get-Module -ListAvailable -Name PSScriptAnalyzer)
+    $pwshInstalled = Test-CommandExists 'pwsh'
+    $nodeInstalled = Test-CommandExists 'node'
+
+    Write-Host ("  $(Get-DevEnvironmentStatusSymbol -Installed $gitInstalled -Required $true) Git")
+    Write-Host ("  $(Get-DevEnvironmentStatusSymbol -Installed $ghInstalled -Required $true) GitHub CLI")
+    Write-Host ("  $(Get-DevEnvironmentStatusSymbol -Installed $psaInstalled -Required $false) PSScriptAnalyzer")
+    Write-Host ("  $(Get-DevEnvironmentStatusSymbol -Installed $pwshInstalled -Required $false) PowerShell 7")
+    Write-Host ("  $(Get-DevEnvironmentStatusSymbol -Installed $nodeInstalled -Required $false) Node.js")
+    Write-Host ''
+
+    if ($gitInstalled -and $ghInstalled) {
+        Write-Host '  Everything required for DevTools development is installed.' -ForegroundColor DarkGray
+    }
+    else {
+        Write-Host '  Some required tools are missing for DevTools development.' -ForegroundColor DarkGray
+    }
+
+    Write-Host ''
 }
 
 function Show-OptionalDevelopmentToolReport {
@@ -117,7 +158,7 @@ function Invoke-OptionalPSScriptAnalyzerLint {
 
             if ($analyzerResults.Count -eq 0) {
                 $mark = Get-OptionalToolResultMark
-                Write-Host "$mark No issues found." -ForegroundColor Green
+                Write-Host "$mark No lint issues found." -ForegroundColor Green
                 return
             }
 

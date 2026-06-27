@@ -72,10 +72,18 @@ dev test
 
 ---
 
-## Global install
+## Global install and self-management
+
+Commands under `dev self` manage **DevTools itself** — testing, inspection, safe updates, and PATH setup. This is separate from `dev doctor`, which checks your general development environment.
 
 | Command | Description |
 | --- | --- |
+| `dev self` | Interactive menu for DevTools self-management |
+| `dev self test` | Run the same automated tests as `dev test` |
+| `dev self update` | Safely pull latest changes when the working tree is clean |
+| `dev self version` | Show DevTools version and repository URL |
+| `dev self doctor` | Diagnose this DevTools installation (files, Git status) |
+| `dev self info` | Show install path, config path, version, and Git details |
 | `dev self install` | Add DevTools to your user PATH |
 | `dev self uninstall` | Remove DevTools from your user PATH |
 | `dev self path` | Show install root and PATH status |
@@ -83,10 +91,16 @@ dev test
 Examples:
 
 ```powershell
+dev self
+dev self test
+dev self version
+dev self doctor
 dev self install
 dev self path
 dev self uninstall
 ```
+
+`dev self update` refuses to pull when you have uncommitted local changes. It does not reset, discard, commit, or push.
 
 Only the **User** PATH is modified. Admin privileges are not required.
 

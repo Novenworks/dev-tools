@@ -232,8 +232,8 @@ catch {
 }
 
 # Optional development tools (does not affect pass/fail)
+. (Join-Path $ProjectRoot 'lib\utils.ps1')
 . (Join-Path $ProjectRoot 'lib\test.ps1')
-Invoke-OptionalPSScriptAnalyzerLint -ProjectRoot $ProjectRoot
 
 # Summary
 Write-Host ''
@@ -244,8 +244,16 @@ Write-Host "Config valid: $(if ($configValid) { 'Yes' } else { 'No' })"
 
 if ($failed) {
     Write-Host 'Result: FAIL' -ForegroundColor Red
+}
+else {
+    Write-Host 'Result: PASS' -ForegroundColor Green
+}
+
+Show-DevelopmentEnvironmentSummary
+Invoke-OptionalPSScriptAnalyzerLint -ProjectRoot $ProjectRoot
+
+if ($failed) {
     exit 1
 }
 
-Write-Host 'Result: PASS' -ForegroundColor Green
 exit 0

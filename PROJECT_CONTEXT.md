@@ -123,6 +123,8 @@ At the time of writing, DevTools includes:
 
 `dev self install` adds the installation folder to the **User** PATH only (no admin, no Machine PATH).
 
+DevTools should increasingly dogfood itself. Commands under `dev self` are responsible for testing, inspecting, and safely updating the DevTools installation.
+
 Update this section when features ship or are removed.
 
 ---

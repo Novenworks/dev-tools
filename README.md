@@ -222,7 +222,7 @@ If DevTools is on your PATH after running `install.ps1`, you can use `dev` inste
 | `info` | Inspect project details and quick actions | `dev info walkreplay` |
 | `help` | Show beginner-friendly help | `dev help` |
 | `test` | Run automated validation (works from any directory) | `dev test` |
-| `self` | Manage global PATH install | `dev self install` |
+| `self` | Manage DevTools itself (test, update, version, doctor, info, PATH) | `dev self` |
 
 **Backup safety:** Backup shows repositories with changes and asks for confirmation before committing or pushing. Nothing is committed or pushed without your approval.
 
@@ -408,12 +408,15 @@ The current CI checks:
 Install-Module PSScriptAnalyzer -Scope CurrentUser
 ```
 
+After the test summary, the runner also prints a **Development Environment** section listing required tools (Git, GitHub CLI) and optional tools (PSScriptAnalyzer, PowerShell 7, Node.js) with ASCII status markers.
+
 Manual smoke testing is still used before releases. See [docs/testing/smoke-test.md](docs/testing/smoke-test.md).
 
 Run the same checks locally from **any directory**:
 
 ```powershell
 dev test
+dev self test
 ```
 
 Or invoke the test script directly from the DevTools folder:

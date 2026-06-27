@@ -18,6 +18,8 @@ All notable changes to DevTools are documented here.
 - Internal maintainer context (`PROJECT_CONTEXT.md`)
 - Home Recent Projects section and **O** shortcut when recents exist
 - `dev test` command for automated validation from any directory
+- Development Environment summary in the automated test runner (required and optional dev tools)
+- `dev self` namespace for DevTools self-management (interactive menu, test, update, version, doctor, info)
 - `dev self install`, `dev self uninstall`, and `dev self path` for safe user PATH management
 - Friendly optional-tool reporting for PSScriptAnalyzer in the test runner
 
