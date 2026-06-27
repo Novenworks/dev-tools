@@ -129,6 +129,40 @@ cd C:\Projects\dev-tools
 
 ```powershell
 .\dev.cmd open
+.\dev.cmd open walkreplay
+```
+
+---
+
+## Recent Projects
+
+- [ ] Recent project appears after opening a project
+- [ ] Recent project can be opened by number
+- [ ] Missing recent project path is handled gracefully
+- [ ] Home shows recent projects when available
+- [ ] Press O on Home opens recent picker
+
+**Command:**
+
+```powershell
+.\dev.cmd recent
+```
+
+---
+
+## Project Info
+
+- [ ] Info loads for Git repo
+- [ ] Info loads for non-Git folder
+- [ ] Partial name search works
+- [ ] GitHub URL opens if available
+- [ ] Stack detection shows inferred tags
+
+**Commands:**
+
+```powershell
+.\dev.cmd info
+.\dev.cmd info walkreplay
 ```
 
 ---
@@ -138,6 +172,8 @@ cd C:\Projects\dev-tools
 - [ ] Home
 - [ ] Main Menu
 - [ ] Quick Actions
+- [ ] Recent Projects
+- [ ] Project Info
 - [ ] Help
 - [ ] Settings
 - [ ] Exit
@@ -148,6 +184,8 @@ cd C:\Projects\dev-tools
 .\dev.cmd home
 .\dev.cmd menu
 .\dev.cmd quick
+.\dev.cmd recent
+.\dev.cmd info
 .\dev.cmd help
 .\dev.cmd settings
 ```

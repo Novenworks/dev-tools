@@ -113,13 +113,24 @@ function Get-HomeActionDefinitions {
     $attentionItems = @(Get-HomeAttentionItems)
 
     if ($Status.RequiredAttention -eq 0) {
-        return @(
+        $actions = @(
             [pscustomobject]@{ Key = '1'; Label = 'Main Menu'; Action = 'menu' }
             [pscustomobject]@{ Key = '2'; Label = 'Quick Actions'; Action = 'quick' }
-            [pscustomobject]@{ Key = '3'; Label = 'Doctor'; Action = 'doctor' }
-            [pscustomobject]@{ Key = '4'; Label = 'Settings'; Action = 'settings' }
-            [pscustomobject]@{ Key = '5'; Label = 'Exit'; Action = 'exit' }
         )
+
+        if (@(Get-RecentProjects).Count -gt 0) {
+            $actions += [pscustomobject]@{ Key = '3'; Label = 'Open Recent'; Action = 'recent' }
+            $actions += [pscustomobject]@{ Key = '4'; Label = 'Doctor'; Action = 'doctor' }
+            $actions += [pscustomobject]@{ Key = '5'; Label = 'Settings'; Action = 'settings' }
+            $actions += [pscustomobject]@{ Key = '6'; Label = 'Exit'; Action = 'exit' }
+        }
+        else {
+            $actions += [pscustomobject]@{ Key = '3'; Label = 'Doctor'; Action = 'doctor' }
+            $actions += [pscustomobject]@{ Key = '4'; Label = 'Settings'; Action = 'settings' }
+            $actions += [pscustomobject]@{ Key = '5'; Label = 'Exit'; Action = 'exit' }
+        }
+
+        return $actions
     }
 
     if ($attentionItems.Count -eq 1) {
@@ -158,6 +169,7 @@ function Show-HomeScreen {
 
     Show-HomeStatusFocal -Status $status -AttentionItems $attentionItems
     Show-HomeChecklist -Status $status
+    Show-HomeRecentProjects
 
     $actions = @(Get-HomeActionDefinitions -Status $status)
     ShowHomeActions -Actions $actions

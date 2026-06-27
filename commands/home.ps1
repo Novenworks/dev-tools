@@ -3,6 +3,11 @@ function Invoke-HomeDashboard {
         $screen = Show-HomeScreen
         $choice = Read-Host 'Choose an option'
 
+        if ($choice -match '^[Oo]$' -and @(Get-RecentProjects).Count -gt 0) {
+            Invoke-RecentProjectsPicker
+            continue
+        }
+
         $selected = @($screen.Actions | Where-Object { $_.Key -eq $choice } | Select-Object -First 1)
 
         if (-not $selected) {
@@ -33,6 +38,10 @@ function Invoke-HomeDashboard {
             'quick' {
                 . (Join-Path $DevToolsRoot 'commands\quick.ps1')
                 exit 0
+            }
+            'recent' {
+                Invoke-RecentProjectsFlow
+                Wait-ForKey -Message 'Press Enter to return to Home'
             }
             'exit' {
                 exit 0

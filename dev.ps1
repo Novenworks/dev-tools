@@ -2,10 +2,13 @@
 
 param(
     [Parameter(Position = 0)]
-    [string]$Command = 'home'
+    [string]$Command = 'home',
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$CommandArgs
 )
 
 $DevToolsRoot = $PSScriptRoot
+$script:DevToolsCommandArgs = @($CommandArgs)
 
 . (Join-Path $DevToolsRoot 'lib\utils.ps1')
 . (Join-Path $DevToolsRoot 'lib\copy.ps1')
@@ -16,6 +19,8 @@ $DevToolsRoot = $PSScriptRoot
 . (Join-Path $DevToolsRoot 'lib\doctor.ps1')
 . (Join-Path $DevToolsRoot 'lib\home.ps1')
 . (Join-Path $DevToolsRoot 'lib\projects.ps1')
+. (Join-Path $DevToolsRoot 'lib\recent.ps1')
+. (Join-Path $DevToolsRoot 'lib\project-info.ps1')
 
 $configSetup = Initialize-DevToolsConfig
 $script:FirstRun = $configSetup.Created
@@ -48,7 +53,7 @@ $commandFile = Join-Path $DevToolsRoot "commands\$commandName.ps1"
 
 if (-not (Test-Path $commandFile)) {
     ShowError "Unknown command: $Command"
-    ShowInfo 'Valid commands: home, menu, quick, configure, settings, doctor, clone, update, status, backup, open, help'
+    ShowInfo 'Valid commands: home, menu, quick, recent, info, configure, settings, doctor, clone, update, status, backup, open, help'
     exit 1
 }
 

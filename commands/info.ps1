@@ -1,7 +1,7 @@
+$query = $null
+
 if ($script:DevToolsCommandArgs -and $script:DevToolsCommandArgs.Count -gt 0) {
     $query = ($script:DevToolsCommandArgs -join ' ').Trim()
-    Invoke-OpenProjectByName -Query $query
 }
-else {
-    Invoke-OpenProjectFlow
-}
+
+Invoke-ProjectInfoFlow -ProjectQuery $query

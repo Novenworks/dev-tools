@@ -116,10 +116,22 @@ $commandFiles = @(
     'commands/backup.ps1'
     'commands/open.ps1'
     'commands/help.ps1'
+    'commands/quick.ps1'
+    'commands/recent.ps1'
+    'commands/info.ps1'
 )
 
 foreach ($commandFile in $commandFiles) {
     Test-RequiredPath -Path $commandFile -Label "Command file: $commandFile" | Out-Null
+}
+
+$libFiles = @(
+    'lib/recent.ps1'
+    'lib/project-info.ps1'
+)
+
+foreach ($libFile in $libFiles) {
+    Test-RequiredPath -Path $libFile -Label "Library file: $libFile" | Out-Null
 }
 
 # Parse all PowerShell files
@@ -177,15 +189,11 @@ Test-ReadmeContains -Text 'Commands' -Label 'Commands' | Out-Null
 Test-ReadmeContains -Text 'Roadmap' -Label 'Roadmap' | Out-Null
 
 # Verify main commands are loadable (syntax-only via AST on command scripts)
-$mainCommands = @('home', 'menu', 'configure', 'settings', 'doctor', 'clone', 'update', 'status', 'backup', 'open', 'help', 'quick')
+$mainCommands = @('home', 'menu', 'configure', 'settings', 'doctor', 'clone', 'update', 'status', 'backup', 'open', 'help', 'quick', 'recent', 'info')
 
 foreach ($commandName in $mainCommands) {
     $commandPath = Join-Path $ProjectRoot "commands\$commandName.ps1"
     if (-not (Test-Path -LiteralPath $commandPath)) {
-        if ($commandName -eq 'quick') {
-            continue
-        }
-
         Write-TestFailure "Main command missing: $commandName"
         continue
     }

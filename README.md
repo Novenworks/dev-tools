@@ -49,6 +49,8 @@ Recommended screenshots:
 - **Safe backup workflow** — Review changes and confirm before committing or pushing
 - **Project launcher** — Open a project in your preferred editor
 - **Quick Actions** — Fast path for update, open, status, and clone
+- **Recent Projects** — Jump back into projects you open most often
+- **Project Info** — Inspect Git status, stack, and quick actions
 - **Project search** — Find projects by partial name in large workspaces
 - **Settings menu** — Update preferences one at a time
 - **Beginner-friendly help** — Plain-language guidance built into the CLI
@@ -176,6 +178,14 @@ Most users never need to edit `config.json` manually.
 .\dev.cmd quick
 ```
 
+```powershell
+.\dev.cmd recent
+```
+
+```powershell
+.\dev.cmd info walkreplay
+```
+
 If DevTools is on your PATH after running `install.ps1`, you can use `dev` instead of `.\dev.cmd`.
 
 ---
@@ -194,7 +204,9 @@ If DevTools is on your PATH after running `install.ps1`, you can use `dev` inste
 | `update` | Pull latest changes in existing repos | `dev update` |
 | `status` | Show repository status across the workspace | `dev status` |
 | `backup` | Review changed repos and back up safely | `dev backup` |
-| `open` | Open a project in your default editor | `dev open` |
+| `open` | Open a project in your default editor | `dev open` or `dev open walkreplay` |
+| `recent` | Open a recently used project | `dev recent` |
+| `info` | Inspect project details and quick actions | `dev info walkreplay` |
 | `help` | Show beginner-friendly help | `dev help` |
 
 **Backup safety:** Backup shows repositories with changes and asks for confirmation before committing or pushing. Nothing is committed or pushed without your approval.
@@ -205,9 +217,10 @@ If DevTools is on your PATH after running `install.ps1`, you can use `dev` inste
 
 Quick Actions are for the tasks you run most often:
 
-- Update repositories
-- Open a project
+- Open a recent project
+- Search and open a project
 - View repository status
+- Update repositories
 - Clone missing repositories
 
 Launch from Home (when ready), the Main Menu, or directly:
@@ -241,6 +254,38 @@ Run:
 ```powershell
 .\dev.cmd open
 ```
+
+---
+
+## Recent Projects
+
+DevTools remembers the projects you open most often so you can get back to work quickly.
+
+```powershell
+.\dev.cmd recent
+```
+
+On Home, recently opened projects appear when available. Press **O** to open one quickly.
+
+Recent data is stored locally in `config/recent-projects.json` and is not committed to Git.
+
+---
+
+## Project Info
+
+Inspect a project without leaving DevTools — location, Git status, branch, remote, last commit, inferred stack, and quick actions.
+
+```powershell
+.\dev.cmd info
+```
+
+```powershell
+.\dev.cmd info walkreplay
+```
+
+Stack detection is inferred from common project files (for example `package.json`, `next.config.js`, `supabase/`).
+
+Detailed command docs: [docs/commands.md](docs/commands.md)
 
 ---
 

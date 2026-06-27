@@ -9,6 +9,16 @@ ShowInfo 'A friendly workspace manager for cloning, updating, checking, backing 
 ShowSection -Label 'Who is it for?'
 ShowInfo 'Anyone who wants to spend less time managing repositories and more time building.'
 
+ShowSection -Label 'Recent Projects'
+ShowInfo 'DevTools remembers projects you open most often.'
+ShowInfo 'Run: dev recent'
+ShowInfo 'Press O on Home to quickly open a recent project.'
+
+ShowSection -Label 'Project Info'
+ShowInfo 'Inspect a project without leaving DevTools.'
+ShowInfo 'Run: dev info'
+ShowInfo 'Run: dev info walkreplay'
+
 ShowSection -Label 'Typical workflow'
 ShowInfo '1. Configure your workspace.'
 ShowInfo '2. Run Doctor.'
@@ -20,17 +30,19 @@ ShowInfo '7. Update repositories regularly.'
 
 ShowSection -Label 'Quick Actions'
 ShowInfo 'Quick Actions are for the tasks you run most often:'
-ShowInfo 'Update repositories, open a project, view status, or clone missing repos.'
+ShowInfo 'Open recent, search projects, view status, update, or clone.'
 ShowInfo 'Run: dev quick'
 
 ShowSection -Label 'Open Project search'
 ShowInfo 'When opening a project, search by partial name.'
 ShowInfo 'Example: search "walk" to find WalkReplay and similar folders.'
-ShowInfo 'Press Enter without typing to list all projects.'
+ShowInfo 'Run: dev open walkreplay'
 
 ShowSection -Label 'Quick Commands'
 ShowInfo 'dev'
 ShowInfo 'dev quick'
+ShowInfo 'dev recent'
+ShowInfo 'dev info'
 ShowInfo 'dev doctor'
 ShowInfo 'dev status'
 ShowInfo 'dev update'
@@ -40,3 +52,4 @@ ShowInfo 'dev open'
 ShowSection -Label 'Need more help?'
 ShowInfo 'Visit the GitHub repository for documentation and updates:'
 ShowInfo (Get-DevToolsRepositoryUrl)
+ShowInfo 'See docs/commands.md for detailed command reference.'

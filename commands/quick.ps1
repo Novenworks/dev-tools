@@ -5,12 +5,13 @@ function Show-QuickActionsMenu {
     Write-Host ''
     Write-Host 'What would you like to do?' -ForegroundColor DarkGray
     Write-Host ''
-    Write-Host '  1  Update all repositories'
-    Write-Host '  2  Open a project'
-    Write-Host '  3  Repository status'
-    Write-Host '  4  Clone missing repositories'
-    Write-Host '  5  Main Menu'
-    Write-Host '  6  Exit'
+    Write-Host '  1  Open Recent Project'
+    Write-Host '  2  Open Project Search'
+    Write-Host '  3  Repository Status'
+    Write-Host '  4  Update Repositories'
+    Write-Host '  5  Clone Missing Repositories'
+    Write-Host '  6  Main Menu'
+    Write-Host '  7  Exit'
     Write-Host ''
     Write-Host 'Type a number and press Enter.' -ForegroundColor DarkGray
     Write-Host ''
@@ -30,15 +31,16 @@ function Invoke-QuickActions {
         $choice = Read-Host 'Choose an option'
 
         switch ($choice) {
-            '1' { Invoke-QuickSubcommand -CommandName 'update' }
+            '1' { Invoke-RecentProjectsFlow }
             '2' { Invoke-OpenProjectFlow }
             '3' { Invoke-QuickSubcommand -CommandName 'status' }
-            '4' { Invoke-QuickSubcommand -CommandName 'clone' }
-            '5' {
+            '4' { Invoke-QuickSubcommand -CommandName 'update' }
+            '5' { Invoke-QuickSubcommand -CommandName 'clone' }
+            '6' {
                 . (Join-Path $DevToolsRoot 'commands\menu.ps1')
                 exit 0
             }
-            '6' { exit 0 }
+            '7' { exit 0 }
             default {
                 ShowWarning 'Please choose a number from the menu.'
                 Wait-ForKey -Message 'Press Enter to try again'
