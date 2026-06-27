@@ -69,8 +69,9 @@ Write-Host ''
 
 # Required files
 $requiredFiles = @(
-    'dev.ps1'
+    'dev-core.ps1'
     'dev.cmd'
+    'install.ps1'
     'config.example.json'
     'README.md'
     'CHANGELOG.md'
@@ -80,6 +81,51 @@ $requiredFiles = @(
 
 foreach ($file in $requiredFiles) {
     Test-RequiredPath -Path $file -Label "Required file: $file" | Out-Null
+}
+
+$versionPath = Join-Path $ProjectRoot 'VERSION'
+if (Test-Path -LiteralPath $versionPath) {
+    $versionValue = (Get-Content -LiteralPath $versionPath -Raw).Trim()
+
+    if ($versionValue -eq '0.4.0') {
+        Write-TestPass 'VERSION is 0.4.0'
+    }
+    else {
+        Write-TestFailure "VERSION expected 0.4.0 but found: $versionValue"
+    }
+}
+else {
+    Write-TestFailure 'VERSION file missing'
+}
+
+$legacyDevPs1Path = Join-Path $ProjectRoot 'dev.ps1'
+if (Test-Path -LiteralPath $legacyDevPs1Path) {
+    Write-TestFailure 'Root dev.ps1 must not exist (use dev-core.ps1 to avoid PATH conflicts)'
+}
+else {
+    Write-TestPass 'Root dev.ps1 is absent'
+}
+
+$devCmdPath = Join-Path $ProjectRoot 'dev.cmd'
+if (Test-Path -LiteralPath $devCmdPath) {
+    $devCmdContent = Get-Content -LiteralPath $devCmdPath -Raw
+
+    if ($devCmdContent -match 'dev-core\.ps1') {
+        Write-TestPass 'dev.cmd references dev-core.ps1'
+    }
+    else {
+        Write-TestFailure 'dev.cmd must reference dev-core.ps1'
+    }
+
+    if ($devCmdContent -match 'ExecutionPolicy Bypass') {
+        Write-TestPass 'dev.cmd includes ExecutionPolicy Bypass'
+    }
+    else {
+        Write-TestFailure 'dev.cmd must include ExecutionPolicy Bypass'
+    }
+}
+else {
+    Write-TestFailure 'dev.cmd missing for launcher validation'
 }
 
 # Required folders
@@ -191,6 +237,38 @@ Test-ReadmeContains -Text 'Installation' -Label 'Installation' | Out-Null
 Test-ReadmeContains -Text 'Quick Start' -Label 'Quick Start' | Out-Null
 Test-ReadmeContains -Text 'Commands' -Label 'Commands' | Out-Null
 Test-ReadmeContains -Text 'Roadmap' -Label 'Roadmap' | Out-Null
+Test-ReadmeContains -Text 'install.ps1' -Label 'install.ps1' | Out-Null
+Test-ReadmeContains -Text 'ExecutionPolicy Bypass' -Label 'ExecutionPolicy Bypass install' | Out-Null
+Test-ReadmeContains -Text 'v0.4.0' -Label 'v0.4.0' | Out-Null
+
+$readmePath = Join-Path $ProjectRoot 'README.md'
+$readmeContent = Get-Content -LiteralPath $readmePath -Raw
+
+if ($readmeContent -match 'powershell -ExecutionPolicy Bypass -File "\.\\dev\.ps1"') {
+    Write-TestFailure 'README must not recommend dev.ps1 as the primary entrypoint'
+}
+else {
+    Write-TestPass 'README does not recommend dev.ps1 as primary entrypoint'
+}
+
+$installationDocPath = Join-Path $ProjectRoot 'docs\installation.md'
+if (Test-Path -LiteralPath $installationDocPath) {
+    $installationDocContent = Get-Content -LiteralPath $installationDocPath -Raw
+
+    if ($installationDocContent -match 'install\.ps1') {
+        Write-TestPass 'installation.md mentions install.ps1'
+    }
+    else {
+        Write-TestFailure 'installation.md must mention install.ps1'
+    }
+
+    if ($installationDocContent -match 'ExecutionPolicy Bypass') {
+        Write-TestPass 'installation.md mentions ExecutionPolicy Bypass install'
+    }
+    else {
+        Write-TestFailure 'installation.md must mention ExecutionPolicy Bypass install'
+    }
+}
 
 # Verify main commands are loadable (syntax-only via AST on command scripts)
 $mainCommands = @('home', 'menu', 'configure', 'settings', 'doctor', 'clone', 'update', 'status', 'backup', 'open', 'help', 'quick', 'recent', 'info', 'test', 'self')

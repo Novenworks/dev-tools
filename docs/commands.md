@@ -6,6 +6,40 @@ For a quick overview, see the [README](../README.md).
 
 ---
 
+## Command index
+
+| Command | Description |
+| --- | --- |
+| `dev` | Home dashboard (default) |
+| `dev home` | Home dashboard |
+| `dev menu` | Main menu |
+| `dev quick` | Quick Actions |
+| `dev recent` | Open a recent project |
+| `dev info` | Inspect a project |
+| `dev open` | Search and open a project |
+| `dev doctor` | Development environment check |
+| `dev test` | Automated validation suite |
+| `dev self` | DevTools self-management menu |
+| `dev self test` | Same as `dev test` |
+| `dev self update` | Safely pull DevTools updates |
+| `dev self version` | Show DevTools version |
+| `dev self doctor` | Diagnose DevTools installation |
+| `dev self info` | Show install and Git details |
+| `dev self install` | Add DevTools to user PATH |
+| `dev self uninstall` | Remove DevTools from user PATH |
+| `dev self path` | PATH and launcher diagnostics |
+| `dev configure` | Guided setup wizard |
+| `dev settings` | Change preferences |
+| `dev clone` | Clone missing repositories |
+| `dev update` | Pull latest changes |
+| `dev status` | Repository status overview |
+| `dev backup` | Safe backup workflow |
+| `dev help` | Beginner-friendly help |
+
+Commands under **`dev self`** manage DevTools itself. They do not replace `dev doctor`, which checks your general development environment.
+
+---
+
 ## Core navigation
 
 | Command | Description |
@@ -86,7 +120,7 @@ Commands under `dev self` manage **DevTools itself** — testing, inspection, sa
 | `dev self info` | Show install path, config path, version, and Git details |
 | `dev self install` | Add DevTools to your user PATH |
 | `dev self uninstall` | Remove DevTools from your user PATH |
-| `dev self path` | Show install root and PATH status |
+| `dev self path` | Show install root, PATH status, resolved `dev`/`dev.cmd`, and PATH conflicts |
 
 Examples:
 
@@ -99,6 +133,14 @@ dev self install
 dev self path
 dev self uninstall
 ```
+
+Install DevTools globally with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File install.ps1
+```
+
+Then close and reopen PowerShell and run `dev`.
 
 `dev self update` refuses to pull when you have uncommitted local changes. It does not reset, discard, commit, or push.
 
@@ -178,6 +220,10 @@ Project Info is read-only. It does not modify files, install packages, or run de
 ## See also
 
 - [Installation guide](installation.md)
+- [Configuration](configuration.md)
+- [Testing](testing.md)
+- [Roadmap](roadmap.md)
+- [FAQ](faq.md)
 - [Smoke test checklist](testing/smoke-test.md)
 - [Contributing](../CONTRIBUTING.md)
 - [Project context](../PROJECT_CONTEXT.md) (maintainers and AI assistants)

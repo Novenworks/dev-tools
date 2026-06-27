@@ -1,6 +1,6 @@
 # DevTools — Project Context
 
-**Version:** v0.3.x (see `VERSION`)  
+**Version:** v0.4.0 (see `VERSION`)  
 **Status:** Active Development  
 **Repository:** https://github.com/Novenworks/dev-tools  
 **Product:** DevTools  
@@ -115,7 +115,12 @@ At the time of writing, DevTools includes:
 
 - Manual smoke test checklist (`docs/testing/smoke-test.md`)
 - Automated validation (`tests/Test-DevTools.ps1`, GitHub Actions CI)
+- `dev test` — run validation from any directory
+- `dev self` — test, inspect, update, and manage PATH for DevTools itself
+- Global install via `install.ps1` or `dev self install` (User PATH only)
 - GitHub issue templates, labels/milestones docs, seed issue list
+
+DevTools dogfoods itself through `dev self` and `dev test`.
 
 **Commands (entry point: `dev` / `dev.cmd`)**
 
@@ -147,18 +152,18 @@ Maintain a focused scope.
 
 ## Current Milestone
 
-**v0.3.x — Public Polish**
+**v0.4.0 — Developer Command Center**
 
-Objectives:
+Shipped in this release:
 
-- Improve onboarding and Home experience
-- Polish UX copy and menus
-- Stabilize commands before broader sharing
-- Complete public documentation
-- Publish first public GitHub release
-- Gather early user feedback
+- Global install and global `dev` command
+- Recent Projects, Project Info, Quick Actions
+- `dev test` and `dev self`
+- Automated validation and GitHub Actions CI
+- Smoke testing documentation
+- Improved installation flow and launcher architecture
 
-**Next patch focus (v0.3.1 — Stability):** See [`.github/milestones.md`](.github/milestones.md) and [`.github/ISSUES_TO_CREATE.md`](.github/ISSUES_TO_CREATE.md).
+**Next focus (v0.4.x — Stabilization):** See [`.github/milestones.md`](.github/milestones.md) and [`.github/ISSUES_TO_CREATE.md`](.github/ISSUES_TO_CREATE.md).
 
 ---
 
@@ -170,31 +175,38 @@ Roadmap detail lives in GitHub Issues, labels, and milestones. See:
 - [`.github/ISSUES_TO_CREATE.md`](.github/ISSUES_TO_CREATE.md)
 - `README.md` (public summary)
 
-### v0.4 — Daily Workflow
+### v0.4.0 — Developer Command Center
 
-**Focus:** Make DevTools faster to use every day.
+**Status:** Current release.
 
-**Shipped in repo (may predate next CHANGELOG entry):**
+**Completed:**
 
+- Global install
 - Recent Projects
-- Project search (Open Project)
 - Project Info
-- Quick Actions screen
+- Quick Actions
+- `dev test`
+- `dev self`
+- Automated validation
+- Documentation structure
 
-**Still planned:**
+### v0.4.x — Stabilization
 
-- Favorite projects
-- Better progress indicators (clone, update, backup)
-- Multi-editor support
-- GitHub release package
-- Self-update command
-- README screenshots and onboarding polish
+**Focus:** Polish, screenshots, installer edge cases, clean install validation.
 
-### v0.5 — Power User
+**Remaining:**
+
+- README screenshots
+- Clean Windows install test
+- Installer polish
+- Progress indicators
+- Edge-case fixes
+
+### v0.5 — Power User Workflows
 
 **Focus:** Scale to larger development environments.
 
-Potential work: workspace profiles, project profiles, project templates, plugin system, launch workflows, auto updater.
+Potential work: favorites, project profiles, workspace profiles, project launch workflows, self-update improvements, guided publish workflow, plugin exploration.
 
 ### v1.0 — Stable Public Release
 
@@ -207,8 +219,8 @@ Goals: stable command interface, complete documentation, mature onboarding, reli
 ### Repository structure
 
 ```text
-dev.ps1 / dev.cmd          Entry point (dev.cmd bypasses execution policy)
-install.ps1                Legacy PATH setup (prefer `dev self install`)
+dev.cmd / dev-core.ps1     Entry point (dev.cmd is the public launcher; dev-core.ps1 is the real script)
+install.ps1                Recommended PATH installer (`powershell -ExecutionPolicy Bypass -File install.ps1`)
 
 commands/                  User-facing commands (thin wrappers)
 lib/                       Shared business logic
@@ -245,7 +257,8 @@ VERSION                    Single source for version string
 - Avoid duplicated code; prefer shared helpers in `lib/projects.ps1` for search/open flows.
 - Keep modules focused.
 - Do not use the GitHub REST API — use GitHub CLI (`gh`) where needed.
-- Do not rewrite `dev.ps1` into a monolith.
+- Do not rewrite `dev-core.ps1` into a monolith.
+- Do not add a root-level `dev.ps1` — PowerShell may prefer it over `dev.cmd` on PATH.
 
 ### Configuration and local data
 
@@ -269,6 +282,11 @@ Each document has a single responsibility.
 | `README.md` | Public | Landing page, install, quick start |
 | `docs/commands.md` | Users | Detailed command reference |
 | `docs/installation.md` | Users | Clone, global install, PATH management |
+| `docs/configuration.md` | Users | Settings and config.json |
+| `docs/roadmap.md` | Public | Milestone summary |
+| `docs/faq.md` | Users | Common questions |
+| `docs/architecture.md` | Contributors | High-level structure |
+| `docs/testing.md` | Maintainers | Automated and smoke testing overview |
 | `docs/testing/` | Maintainers | Smoke test process |
 | `CHANGELOG.md` | Public | Release history |
 | `CONTRIBUTING.md` | Contributors | How to contribute |
@@ -329,20 +347,19 @@ If not, add a GitHub Issue to the backlog instead of expanding the current miles
 
 **Highest**
 
-- Stability (v0.3.1 remainder: onboarding edge cases, README screenshots, clean install validation)
+- v0.4.x stabilization: README screenshots, clean install validation, installer polish
 - Documentation sync with shipped features
 - Keep CI green
 
 **Medium**
 
-- v0.4 remainder: favorites, progress indicators, multi-editor, release package, self-update
+- v0.5 planning: favorites, project profiles, workspace profiles, launch workflows
 - Polish Recent Projects, Project Info, and Quick Actions based on feedback
 
 **Lower**
 
 - Themes
 - Plugin system
-- Workspace profiles
 - Cross-platform exploration
 
 ---

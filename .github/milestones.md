@@ -4,49 +4,47 @@ DevTools uses GitHub milestones to group related work. Create these milestones m
 
 ---
 
-## v0.3.1 — Stability
+## v0.4.0 — Developer Command Center
 
-**Purpose:** Clean up remaining issues before broader sharing.
+**Status:** Current release.
 
-**Issues:**
+**Shipped:**
 
-- Fix onboarding edge cases
-- Improve GitHub login flow
-- Fix Help screen non-fatal error
-- Add ASCII fallbacks for emoji/status icons
-- Add better README screenshots
-- Test on clean Windows install
+- Global install and global `dev` command
+- Recent Projects, Project Info, Quick Actions
+- `dev test` and `dev self`
+- Automated validation and GitHub Actions CI
+- Improved installation flow and documentation structure
 
 ---
 
-## v0.4 — Quality of Life
+## v0.4.x — Stabilization
 
-**Purpose:** Make DevTools faster and more enjoyable for daily use.
+**Purpose:** Polish and reliability after v0.4.0.
 
 **Issues:**
 
+- Add README screenshots
+- Test clean Windows install flow
+- Installer polish
 - Improve progress indicators
-- Add recent projects
-- Add favorite projects
-- Improve project search
-- Add multi-editor support
-- Add GitHub release package
-- Add self-update command
+- Onboarding edge-case fixes
 
 ---
 
-## v0.5 — Power User
+## v0.5 — Power User Workflows
 
 **Purpose:** Help users manage larger workspaces and repeatable project workflows.
 
 **Issues:**
 
+- Add favorite projects
 - Add project profiles
 - Add workspace profiles
-- Add plugin system
-- Add auto updater
-- Add project templates
 - Add project launch workflows
+- Self-update improvements
+- Guided publish workflow
+- Explore plugin system
 
 ---
 
@@ -56,14 +54,11 @@ DevTools uses GitHub milestones to group related work. Create these milestones m
 
 **Issues:**
 
-- Finalize README
-- Add screenshots
+- Finalize README and screenshots
 - Add installation package
-- Add changelog
-- Add contribution guide
-- Add security policy
-- Add release checklist
-- Validate clean install path
+- Security policy review
+- Release checklist validation
+- Validate clean install path on fresh Windows
 
 ---
 
@@ -73,8 +68,6 @@ DevTools uses GitHub milestones to group related work. Create these milestones m
 - Launch dev server automatically
 - `.devtools.json` project profiles
 - Cross-platform support
-- GitHub Projects board
 - Website landing page
-- Installer UI
 
 See `.github/ISSUES_TO_CREATE.md` for copy-paste issue drafts.

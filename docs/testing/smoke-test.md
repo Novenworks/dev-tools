@@ -10,7 +10,7 @@ Run this checklist before publishing any GitHub Release.
 
 | Field | Value |
 | --- | --- |
-| Release Version | |
+| Release Version | v0.4.0 |
 | Date | |
 | Tester | |
 | Operating System | |
@@ -28,12 +28,39 @@ Run this checklist before publishing any GitHub Release.
 - [ ] Header displays correctly
 - [ ] No parser errors
 - [ ] No unexpected warnings
+- [ ] No execution policy errors when using global `dev`
 
 **Commands to try:**
 
 ```powershell
 cd C:\Projects\dev-tools
 .\dev.cmd
+```
+
+---
+
+## Global install
+
+- [ ] `powershell -ExecutionPolicy Bypass -File install.ps1` completes successfully
+- [ ] Post-install validation shows dev.cmd, dev-core.ps1, and user PATH
+- [ ] After reopening PowerShell, `dev` works from any directory
+- [ ] `dev self path` shows safe resolution to dev.cmd
+- [ ] No execution policy error when running global `dev`
+
+**Install flow:**
+
+```powershell
+git clone https://github.com/Novenworks/dev-tools.git
+cd dev-tools
+powershell -ExecutionPolicy Bypass -File install.ps1
+```
+
+Close and reopen PowerShell, then:
+
+```powershell
+dev
+dev test
+dev self path
 ```
 
 ---

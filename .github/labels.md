@@ -17,9 +17,10 @@ Use these labels when triaging issues and pull requests.
 | `github` | GitHub CLI, auth, repo listing, cloning, releases. |
 | `windows` | Windows-specific behavior. |
 | `powershell` | PowerShell-specific behavior. |
-| `v0.3.1` | Stability release. |
-| `v0.4` | Quality-of-life release. |
-| `v0.5` | Power-user release. |
+| `v0.3.1` | Historical stability release label. |
+| `v0.4.0` | Developer Command Center release. |
+| `v0.4.x` | Post-v0.4.0 stabilization. |
+| `v0.5` | Power-user workflows release. |
 | `v1.0` | Stable public release. |
 | `future` | Ideas not planned for the next milestone. |
 

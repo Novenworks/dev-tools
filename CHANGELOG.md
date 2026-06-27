@@ -2,38 +2,46 @@
 
 All notable changes to DevTools are documented here.
 
-## Unreleased
+## v0.4.0
+
+**Developer Command Center**
 
 ### Added
 
-- Quick Actions screen (`dev quick`) for frequent update, open, status, and clone tasks
-- Recent Projects (`dev recent`) with local history in `config/recent-projects.json`
-- Project Info (`dev info`, `dev info <name>`) with Git metadata, inferred stack, and quick actions
-- Project search for Open Project (`dev open`, `dev open <name>`)
-- GitHub Actions CI (`.github/workflows/ci.yml`)
-- Automated validation script (`tests/Test-DevTools.ps1`)
-- Manual smoke test checklist (`docs/testing/`)
-- GitHub issue templates, labels/milestones docs, and seed issue list (`.github/`)
-- Detailed command reference (`docs/commands.md`)
-- Internal maintainer context (`PROJECT_CONTEXT.md`)
-- Home Recent Projects section and **O** shortcut when recents exist
-- `dev test` command for automated validation from any directory
-- Development Environment summary in the automated test runner (required and optional dev tools)
-- `dev self` namespace for DevTools self-management (interactive menu, test, update, version, doctor, info)
-- `dev self install`, `dev self uninstall`, and `dev self path` for safe user PATH management
-- Friendly optional-tool reporting for PSScriptAnalyzer in the test runner
-
-### Fixed
-
-- Home screen no longer errors when all required checks pass (empty attention items)
-- Home ready state now shows “Everything required is ready.”
-- Status and checklist symbols use safe display helpers with ASCII fallbacks on legacy consoles
+- Global `dev` command support
+- Safer CMD launcher to avoid PowerShell execution policy friction
+- `dev test` command
+- `dev self` namespace (test, update, version, doctor, info, PATH management)
+- Recent Projects
+- Project Info command
+- Quick Actions improvements
+- Automated validation test runner
+- GitHub Actions CI
+- Manual smoke test documentation
+- `PROJECT_CONTEXT.md` as internal project source of truth
+- Improved documentation structure
 
 ### Changed
 
-- Main menu expanded with Quick Actions, Recent Projects, and Project Info
-- Home uses System Status focal point with collapsed Required/Optional checklist
-- DevTools-native GitHub sign-in messaging on Home (no raw `gh auth status` output)
+- README now focuses more on public onboarding
+- Documentation moved into dedicated `docs/` guides
+- Installation flow simplified (`install.ps1` with clear next steps)
+- Test runner now includes a Development Environment summary
+- PSScriptAnalyzer missing state now explains how to install it
+- PowerShell entrypoint renamed to `dev-core.ps1` for reliable global launch
+- `dev self path` shows resolved launcher paths and PATH conflicts
+
+### Fixed
+
+- Home screen now handles zero attention items
+- Global launcher now avoids execution policy errors
+- GitHub login flow no longer exposes raw CLI output where avoidable
+- Help screen parameter edge cases
+- Unicode/status indicator fallback issues on legacy consoles
+
+### Notes
+
+This release moves DevTools from a repository utility toward a lightweight developer command center.
 
 ---
 

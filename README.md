@@ -54,7 +54,9 @@ Recommended screenshots:
 - **Project search** — Find projects by partial name in large workspaces
 - **Settings menu** — Update preferences one at a time
 - **Beginner-friendly help** — Plain-language guidance built into the CLI
-- **Automated validation** — CI and local test script for syntax and project structure
+- **Automated validation** — CI and local test script (`dev test`) for syntax and project structure
+- **Global install** — Type `dev` from any PowerShell window after installation
+- **`dev self`** — Test, inspect, and safely update DevTools itself
 
 ---
 
@@ -96,34 +98,12 @@ Run **Doctor** to see what is installed and what is missing.
 
 ## Installation
 
-### Clone and run
+Install DevTools in three steps:
 
 ```powershell
-git clone https://github.com/Novenworks/dev-tools.git C:\Projects\dev-tools
-cd C:\Projects\dev-tools
-.\dev.cmd
-```
-
-### If PowerShell blocks scripts
-
-Use `dev.cmd`, which is the recommended way to launch DevTools because it avoids common PowerShell execution policy friction:
-
-```powershell
-.\dev.cmd
-```
-
-Or run the entry script directly:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File ".\dev.ps1"
-```
-
-### Global install (recommended)
-
-From the DevTools folder, add it to your **user PATH** (no admin required):
-
-```powershell
-.\dev.cmd self install
+git clone https://github.com/Novenworks/dev-tools.git
+cd dev-tools
+powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
 Close and reopen PowerShell, then run:
@@ -132,17 +112,33 @@ Close and reopen PowerShell, then run:
 dev
 ```
 
-See [docs/installation.md](docs/installation.md) for details, uninstall steps, and PATH troubleshooting.
+The installer adds DevTools to your **user PATH** only (no admin required) and creates `config.json` on first run.
 
-### Legacy: install.ps1
+Close and reopen PowerShell after installation so the updated PATH takes effect.
 
-After cloning, you can also run:
+### Why `dev.cmd`?
+
+The global `dev` command resolves to `dev.cmd`, not a root-level `dev.ps1`. The CMD launcher runs PowerShell with `-NoProfile` and `-ExecutionPolicy Bypass`, so you should not see execution policy errors after installation.
+
+The real PowerShell entrypoint is `dev-core.ps1`. Do not run it directly as your daily workflow; use `dev` or `.\dev.cmd`.
+
+### Run locally without installing
+
+From a cloned folder:
 
 ```powershell
-.\install.ps1
+.\dev.cmd
 ```
 
-This adds DevTools to your user PATH and creates `config.json` on first run. Prefer `dev self install` for the integrated workflow.
+### Alternative: `dev self install`
+
+If DevTools is already on your PATH from a previous session:
+
+```powershell
+.\dev.cmd self install
+```
+
+See [docs/installation.md](docs/installation.md) for uninstall steps, PATH troubleshooting (`dev self path`), and conflict detection.
 
 ---
 
@@ -370,12 +366,12 @@ DevTools uses GitHub Issues, labels, and milestones to track future work.
 
 **Current planned milestones:**
 
-- **v0.3.1** — Stability
-- **v0.4** — Quality of Life
-- **v0.5** — Power User Features
+- **v0.4.0** — Developer Command Center (current release)
+- **v0.4.x** — Stabilization
+- **v0.5** — Power User Workflows
 - **v1.0** — Stable Public Release
 
-See [`.github/ISSUES_TO_CREATE.md`](.github/ISSUES_TO_CREATE.md) for the initial roadmap issue list.
+See [docs/roadmap.md](docs/roadmap.md) for details.
 
 See [`.github/milestones.md`](.github/milestones.md) and [`.github/labels.md`](.github/labels.md) for planning details.
 
@@ -537,18 +533,8 @@ Suggested GitHub topics:
 
 ---
 
-## v0.3.0 Release Notes Draft
+## Release Notes
 
-DevTools v0.3.0 is the first public release of DevTools, an open-source developer utility for managing local GitHub workspaces.
+See [CHANGELOG.md](CHANGELOG.md) for full release history.
 
-**Highlights**
-
-- Guided setup
-- Home dashboard
-- Doctor environment check
-- GitHub repository cloning
-- Multi-repository update workflow
-- Repository status view
-- Safe backup workflow
-- Project launcher
-- Beginner-friendly Help and Settings
+**v0.4.0 — Developer Command Center** adds global install, `dev test`, `dev self`, Recent Projects, Project Info, Quick Actions, automated validation, GitHub Actions CI, and an improved installation flow.
