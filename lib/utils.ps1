@@ -1,3 +1,22 @@
+function Test-DevToolsInstallationRoot {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path
+    )
+
+    $devCmdPath = Join-Path $Path 'dev.cmd'
+    $devCorePath = Join-Path $Path 'dev-core.ps1'
+
+    return (Test-Path -LiteralPath $devCmdPath) -and (Test-Path -LiteralPath $devCorePath)
+}
+
+function Get-DevToolsCoreScriptPath {
+    param(
+        [Parameter(Mandatory = $true)][string]$Root
+    )
+
+    return Join-Path $Root 'dev-core.ps1'
+}
+
 function Get-DevToolsRoot {
     <#
     .SYNOPSIS
@@ -7,14 +26,14 @@ function Get-DevToolsRoot {
     #>
     if ($script:DevToolsRoot) {
         $candidate = $script:DevToolsRoot
-        if (Test-Path -LiteralPath (Join-Path $candidate 'dev.ps1')) {
+        if (Test-DevToolsInstallationRoot -Path $candidate) {
             return $candidate
         }
     }
 
     if ($PSScriptRoot -and ((Split-Path -Leaf $PSScriptRoot) -eq 'lib')) {
         $candidate = Split-Path -Parent $PSScriptRoot
-        if (Test-Path -LiteralPath (Join-Path $candidate 'dev.ps1')) {
+        if (Test-DevToolsInstallationRoot -Path $candidate) {
             return $candidate
         }
     }
@@ -24,7 +43,7 @@ function Get-DevToolsRoot {
 
     if ($devCommand -and $devCommand.Source) {
         $candidate = Split-Path -Parent $devCommand.Source
-        if (Test-Path -LiteralPath (Join-Path $candidate 'dev.ps1')) {
+        if (Test-DevToolsInstallationRoot -Path $candidate) {
             return $candidate
         }
     }

@@ -39,6 +39,14 @@ DevTools uses GitHub labels and milestones to organize work.
 2. Create a focused branch for your change.
 3. Keep changes small and easy to review.
 4. Test your change with `.\dev.cmd` on Windows and run `tests/Test-DevTools.ps1`.
+
+Global install smoke test (optional):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File install.ps1
+```
+
+Close and reopen PowerShell, then run `dev`.
 5. Open a pull request with a clear description.
 
 Maintainers and AI assistants: read [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) before larger changes.

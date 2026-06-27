@@ -22,7 +22,7 @@ function Invoke-QuickSubcommand {
         [Parameter(Mandatory = $true)][string]$CommandName
     )
 
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $DevToolsRoot 'dev.ps1') $CommandName
+    & (Join-Path $DevToolsRoot 'dev.cmd') $CommandName
 }
 
 function Invoke-QuickActions {

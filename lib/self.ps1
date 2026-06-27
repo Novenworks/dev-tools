@@ -54,7 +54,8 @@ function Get-DevToolsPathInstallState {
     return [pscustomobject]@{
         Root            = $Root
         DevCmdPath      = Join-Path $Root 'dev.cmd'
-        DevPs1Path      = Join-Path $Root 'dev.ps1'
+        DevCorePath     = Join-Path $Root 'dev-core.ps1'
+        LegacyDevPs1Path = Join-Path $Root 'dev.ps1'
         InUserPath      = (Test-DevToolsRootInUserPath -Root $Root)
         UserPathEntries = @(Get-DevToolsUserPathEntries)
     }
@@ -68,15 +69,81 @@ function Get-DevToolsCommandResolution {
             ForEach-Object {
                 $source = $_.Source
                 $commandRoot = ConvertTo-NormalizedDirectoryPath -Path (Split-Path -Parent $source)
-                $isDevTools = (Test-Path -LiteralPath (Join-Path $commandRoot 'dev.ps1'))
+                $isDevTools = (Test-DevToolsInstallationRoot -Path $commandRoot)
 
                 [pscustomobject]@{
-                    Source   = $source
-                    Root     = $commandRoot
+                    Source     = $source
+                    Root       = $commandRoot
                     IsDevTools = $isDevTools
+                    Extension  = [System.IO.Path]::GetExtension($source).ToLower()
                 }
             }
     )
+}
+
+function Get-DevToolsEarlierPathConflicts {
+    param(
+        [Parameter(Mandatory = $true)][string]$Root
+    )
+
+    $normalizedRoot = ConvertTo-NormalizedDirectoryPath -Path $Root
+    $entries = @(
+        $env:Path -split ';' |
+            ForEach-Object { $_.Trim() } |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+    )
+
+    $devToolsIndex = -1
+    for ($index = 0; $index -lt $entries.Count; $index++) {
+        if ((ConvertTo-NormalizedDirectoryPath -Path $entries[$index]) -eq $normalizedRoot) {
+            $devToolsIndex = $index
+            break
+        }
+    }
+
+    $conflicts = @()
+
+    for ($index = 0; $index -lt $entries.Count; $index++) {
+        if ($devToolsIndex -ge 0 -and $index -ge $devToolsIndex) {
+            break
+        }
+
+        $entry = ConvertTo-NormalizedDirectoryPath -Path $entries[$index]
+
+        foreach ($commandName in @('dev.cmd', 'dev.ps1', 'dev.exe', 'dev.bat')) {
+            $commandPath = Join-Path $entry $commandName
+
+            if (Test-Path -LiteralPath $commandPath) {
+                $conflicts += [pscustomobject]@{
+                    PathEntry  = $entry
+                    CommandPath = $commandPath
+                    CommandName = $commandName
+                    IsDevTools = (Test-DevToolsInstallationRoot -Path $entry)
+                }
+            }
+        }
+    }
+
+    return @($conflicts)
+}
+
+function Test-DevToolsCommandResolvesSafely {
+    param(
+        [Parameter(Mandatory = $true)][string]$Root
+    )
+
+    $commands = @(Get-DevToolsCommandResolution)
+    $normalizedRoot = ConvertTo-NormalizedDirectoryPath -Path $Root
+
+    if ($commands.Count -eq 0) {
+        return $false
+    }
+
+    $first = $commands[0]
+
+    return $first.IsDevTools `
+        -and ($first.Root -eq $normalizedRoot) `
+        -and ($first.Extension -eq '.cmd')
 }
 
 function Test-DevToolsConflictingDevCommand {
@@ -143,6 +210,109 @@ function Remove-DevToolsRootFromUserPath {
     return $true
 }
 
+function Test-DevToolsInstallValidation {
+    param(
+        [Parameter(Mandatory = $true)][string]$Root
+    )
+
+    $checks = @(
+        [pscustomobject]@{ Label = 'DevTools root exists'; Passed = (Test-Path -LiteralPath $Root) }
+        [pscustomobject]@{ Label = 'dev.cmd exists'; Passed = (Test-Path -LiteralPath (Join-Path $Root 'dev.cmd')) }
+        [pscustomobject]@{ Label = 'dev-core.ps1 exists'; Passed = (Test-Path -LiteralPath (Join-Path $Root 'dev-core.ps1')) }
+        [pscustomobject]@{ Label = 'User PATH contains DevTools root'; Passed = (Test-DevToolsRootInUserPath -Root $Root) }
+    )
+
+    return @($checks)
+}
+
+function Invoke-DevToolsInstallScript {
+    param(
+        [Parameter(Mandatory = $true)][string]$Root
+    )
+
+    Write-Host ''
+    Write-Host 'Installing DevTools...' -ForegroundColor Cyan
+    Write-Host ''
+
+    $normalizedRoot = ConvertTo-NormalizedDirectoryPath -Path $Root
+    $devCmdPath = Join-Path $normalizedRoot 'dev.cmd'
+    $devCorePath = Join-Path $normalizedRoot 'dev-core.ps1'
+
+    if (-not (Test-Path -LiteralPath $devCmdPath)) {
+        Write-Host "Missing required launcher: $devCmdPath" -ForegroundColor Red
+        return 1
+    }
+
+    if (-not (Test-Path -LiteralPath $devCorePath)) {
+        Write-Host "Missing required entrypoint: $devCorePath" -ForegroundColor Red
+        return 1
+    }
+
+    $configPath = Join-Path $normalizedRoot 'config.json'
+    $examplePath = Join-Path $normalizedRoot 'config.example.json'
+
+    if (-not (Test-Path -LiteralPath $configPath) -and (Test-Path -LiteralPath $examplePath)) {
+        Copy-Item -Path $examplePath -Destination $configPath
+        Write-Host 'Created config.json from config.example.json.' -ForegroundColor Yellow
+        Write-Host ''
+    }
+
+    if (Test-DevToolsRootInUserPath -Root $normalizedRoot) {
+        Write-Host 'DevTools is already installed on your user PATH.' -ForegroundColor Green
+        Write-Host "Location: $normalizedRoot" -ForegroundColor DarkGray
+        Write-Host ''
+    }
+    else {
+        $pathConflicts = @(Get-DevToolsEarlierPathConflicts -Root $normalizedRoot)
+        $commandConflicts = @(Test-DevToolsConflictingDevCommand -Root $normalizedRoot)
+
+        if ($pathConflicts.Count -gt 0 -or $commandConflicts.Count -gt 0) {
+            Write-Host 'Warning: another dev command appears earlier on your PATH.' -ForegroundColor Yellow
+            Write-Host ''
+
+            foreach ($conflict in $pathConflicts) {
+                Write-Host "  Found: $($conflict.CommandPath)" -ForegroundColor DarkGray
+            }
+
+            foreach ($conflict in $commandConflicts) {
+                Write-Host "  Found: $($conflict.Source)" -ForegroundColor DarkGray
+            }
+
+            Write-Host ''
+            Write-Host 'DevTools will still be added to your user PATH.' -ForegroundColor DarkGray
+            Write-Host 'If another dev command comes first, type dev self path after reopening PowerShell.' -ForegroundColor DarkGray
+            Write-Host ''
+        }
+
+        $added = Add-DevToolsRootToUserPath -Root $normalizedRoot
+
+        if ($added) {
+            Write-Host "Added $normalizedRoot to your user PATH." -ForegroundColor Green
+            Write-Host ''
+        }
+    }
+
+    Write-Host 'Install validation:' -ForegroundColor Cyan
+
+    foreach ($check in (Test-DevToolsInstallValidation -Root $normalizedRoot)) {
+        $symbol = if ($check.Passed) { '*' } else { 'x' }
+        $color = if ($check.Passed) { 'Green' } else { 'Yellow' }
+        Write-Host "  $symbol $($check.Label)" -ForegroundColor $color
+    }
+
+    Write-Host ''
+    Write-Host 'DevTools installed successfully.' -ForegroundColor Green
+    Write-Host ''
+    Write-Host 'Close and reopen PowerShell, then run:' -ForegroundColor DarkGray
+    Write-Host ''
+    Write-Host '  dev' -ForegroundColor Cyan
+    Write-Host ''
+    Write-Host 'Run dev self path if the global dev command does not resolve correctly.' -ForegroundColor DarkGray
+    Write-Host ''
+
+    return 0
+}
+
 function Invoke-DevToolsSelfInstall {
     $root = Get-DevToolsRoot
 
@@ -152,10 +322,17 @@ function Invoke-DevToolsSelfInstall {
     }
 
     $devCmdPath = Join-Path $root 'dev.cmd'
+    $devCorePath = Join-Path $root 'dev-core.ps1'
 
     if (-not (Test-Path -LiteralPath $devCmdPath)) {
         ShowError 'This DevTools installation appears incomplete.'
         ShowInfo "Missing: $devCmdPath"
+        return 1
+    }
+
+    if (-not (Test-Path -LiteralPath $devCorePath)) {
+        ShowError 'This DevTools installation appears incomplete.'
+        ShowInfo "Missing: $devCorePath"
         return 1
     }
 
@@ -228,26 +405,66 @@ function Invoke-DevToolsSelfPath {
 
     $state = Get-DevToolsPathInstallState -Root $root
     $commands = @(Get-DevToolsCommandResolution)
+    $devCmdCommand = Get-Command -Name 'dev.cmd' -CommandType Application -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    $pathConflicts = @(Get-DevToolsEarlierPathConflicts -Root $root)
+    $resolvesSafely = Test-DevToolsCommandResolvesSafely -Root $root
 
     ShowCommandScreen -Heading 'DevTools PATH' -Description @(
         'Installation and PATH details for this DevTools copy.'
+        'The global dev command should resolve to dev.cmd to avoid execution policy errors.'
     )
 
     Write-Host 'DevTools Root' -ForegroundColor Cyan
     Write-Host "  $(ConvertTo-NormalizedDirectoryPath -Path $state.Root)" -ForegroundColor DarkGray
     Write-Host ''
-    Write-Host 'User PATH' -ForegroundColor Cyan
-    Write-Host ("  {0}" -f $(if ($state.InUserPath) { 'Installed' } else { 'Not installed' })) -ForegroundColor DarkGray
+    Write-Host 'User PATH contains DevTools root' -ForegroundColor Cyan
+    Write-Host ("  {0}" -f $(if ($state.InUserPath) { 'Yes' } else { 'No' })) -ForegroundColor DarkGray
     Write-Host ''
-    Write-Host 'dev command' -ForegroundColor Cyan
+    Write-Host 'Resolved dev command path' -ForegroundColor Cyan
 
     if ($commands.Count -eq 0) {
         Write-Host '  Not detected on PATH in this session.' -ForegroundColor DarkGray
+        Write-Host '  Close and reopen PowerShell after installing.' -ForegroundColor DarkGray
     }
     else {
         foreach ($command in $commands) {
             $label = if ($command.IsDevTools) { 'DevTools' } else { 'Other' }
             Write-Host "  [$label] $($command.Source)" -ForegroundColor DarkGray
+        }
+    }
+
+    Write-Host ''
+    Write-Host 'Resolved dev.cmd command path' -ForegroundColor Cyan
+
+    if ($devCmdCommand -and $devCmdCommand.Source) {
+        Write-Host "  $($devCmdCommand.Source)" -ForegroundColor DarkGray
+    }
+    else {
+        Write-Host '  Not detected on PATH in this session.' -ForegroundColor DarkGray
+    }
+
+    Write-Host ''
+    Write-Host 'dev resolves safely' -ForegroundColor Cyan
+    Write-Host ("  {0}" -f $(if ($resolvesSafely) { 'Yes' } else { 'No' })) -ForegroundColor DarkGray
+
+    if (-not $resolvesSafely) {
+        Write-Host '  Expected: dev.cmd in the DevTools root folder.' -ForegroundColor DarkGray
+    }
+
+    if (Test-Path -LiteralPath $state.LegacyDevPs1Path) {
+        Write-Host ''
+        Write-Host 'Conflicting root dev.ps1' -ForegroundColor Cyan
+        Write-Host "  Found: $($state.LegacyDevPs1Path)" -ForegroundColor DarkGray
+        Write-Host '  Remove dev.ps1 from the DevTools root to avoid PowerShell preferring it over dev.cmd.' -ForegroundColor DarkGray
+    }
+
+    if ($pathConflicts.Count -gt 0) {
+        Write-Host ''
+        Write-Host 'Earlier PATH conflicts' -ForegroundColor Cyan
+
+        foreach ($conflict in $pathConflicts) {
+            Write-Host "  $($conflict.CommandPath)" -ForegroundColor DarkGray
         }
     }
 
@@ -425,8 +642,9 @@ function Invoke-DevToolsSelfDoctor {
 
     $checks = @(
         [pscustomobject]@{ Label = 'DevTools root found'; Passed = [bool]$root }
-        [pscustomobject]@{ Label = 'dev.ps1 exists'; Passed = [bool]($root -and (Test-Path (Join-Path $root 'dev.ps1'))) }
         [pscustomobject]@{ Label = 'dev.cmd exists'; Passed = [bool]($root -and (Test-Path (Join-Path $root 'dev.cmd'))) }
+        [pscustomobject]@{ Label = 'dev-core.ps1 exists'; Passed = [bool]($root -and (Test-Path (Join-Path $root 'dev-core.ps1'))) }
+        [pscustomobject]@{ Label = 'dev.ps1 absent (avoids PATH conflict)'; Passed = [bool]($root -and -not (Test-Path (Join-Path $root 'dev.ps1'))) }
         [pscustomobject]@{ Label = 'VERSION exists'; Passed = [bool]($root -and (Test-Path (Join-Path $root 'VERSION'))) }
         [pscustomobject]@{ Label = 'config.example.json exists'; Passed = [bool]($root -and (Test-Path (Join-Path $root 'config.example.json'))) }
         [pscustomobject]@{ Label = 'tests/Test-DevTools.ps1 exists'; Passed = [bool]($root -and (Test-Path (Join-Path $root 'tests\Test-DevTools.ps1'))) }
