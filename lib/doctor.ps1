@@ -218,8 +218,7 @@ function Invoke-DoctorInteractiveFixes {
                     gh auth login
 
                     if (Test-GhAuthenticated) {
-                        $checkMark = [char]0x2713
-                        ShowSuccess "$checkMark GitHub login successful."
+                        ShowSuccess "$(Get-DevToolsDisplaySymbol -Name 'success-mark') GitHub login successful."
                     }
                     else {
                         ShowInfo 'Sign-in may still be in progress. Run Doctor again if needed.'

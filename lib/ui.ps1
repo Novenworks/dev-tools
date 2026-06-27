@@ -23,6 +23,99 @@ function Get-DevToolsVersion {
     return '0.0.0'
 }
 
+function Test-DevToolsUnicodeSupported {
+    if ($null -ne $script:DevToolsUnicodeSupportCached) {
+        return $script:DevToolsUnicodeSupportCached
+    }
+
+    $supported = $false
+
+    try {
+        if ($env:DEVTOOLS_ASCII -eq '1') {
+            $script:DevToolsUnicodeSupportCached = $false
+            return $false
+        }
+
+        if ($env:DEVTOOLS_FORCE_UNICODE -eq '1') {
+            $script:DevToolsUnicodeSupportCached = $true
+            return $true
+        }
+
+        if ($env:WT_SESSION -or $env:TERM_PROGRAM -eq 'vscode') {
+            $supported = $true
+        }
+        else {
+            try {
+                $supported = ([Console]::OutputEncoding.CodePage -eq 65001)
+            }
+            catch {
+                $supported = $false
+            }
+        }
+    }
+    catch {
+        $supported = $false
+    }
+
+    $script:DevToolsUnicodeSupportCached = $supported
+    return $supported
+}
+
+function Get-DevToolsDisplaySymbol {
+    <#
+    .SYNOPSIS
+        Returns a display symbol as a string — emoji when the console supports it, ASCII otherwise.
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet(
+            'status-ready',
+            'status-almost',
+            'status-setup',
+            'check-pass',
+            'check-fail',
+            'check-optional',
+            'success-mark'
+        )]
+        [string]$Name
+    )
+
+    $ascii = switch ($Name) {
+        'status-ready' { return '*' }
+        'status-almost' { return '-' }
+        'status-setup' { return 'o' }
+        'check-pass' { return '*' }
+        'check-fail' { return 'x' }
+        'check-optional' { return 'o' }
+        'success-mark' { return '*' }
+    }
+
+    if (-not (Test-DevToolsUnicodeSupported)) {
+        return $ascii
+    }
+
+    try {
+        $unicode = switch ($Name) {
+            'status-ready' { [char]::ConvertFromUtf32(0x1F7E2) }
+            'status-almost' { [char]::ConvertFromUtf32(0x1F7E1) }
+            'status-setup' { [char]::ConvertFromUtf32(0x1F7E0) }
+            'check-pass' { [char]::ConvertFromUtf32(0x2713) }
+            'check-fail' { [char]::ConvertFromUtf32(0x2717) }
+            'check-optional' { [char]::ConvertFromUtf32(0x25CB) }
+            'success-mark' { [char]::ConvertFromUtf32(0x2713) }
+        }
+
+        if (-not [string]::IsNullOrEmpty($unicode)) {
+            return $unicode
+        }
+    }
+    catch {
+        # Fall back to ASCII on any conversion or rendering issue.
+    }
+
+    return $ascii
+}
+
 function Get-UiIcon {
     param(
         [ValidateSet('ready', 'attention', 'missing', 'pass', 'warn', 'fail')]

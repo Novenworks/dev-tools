@@ -41,7 +41,7 @@ Recommended screenshots:
 ## Features
 
 - **Guided setup wizard** — Configure your workspace in a few guided steps
-- **Home dashboard** — See whether you are ready to build at a glance
+- **Home dashboard** — System Status, collapsed checklist, and recent projects when available
 - **Development environment check** — Doctor finds missing tools and guides fixes
 - **GitHub repository cloning** — Download repositories from your GitHub owners
 - **Multi-repository updates** — Pull the latest changes across your workspace
@@ -54,6 +54,7 @@ Recommended screenshots:
 - **Project search** — Find projects by partial name in large workspaces
 - **Settings menu** — Update preferences one at a time
 - **Beginner-friendly help** — Plain-language guidance built into the CLI
+- **Automated validation** — CI and local test script for syntax and project structure
 
 ---
 
@@ -117,19 +118,31 @@ Or run the entry script directly:
 powershell -ExecutionPolicy Bypass -File ".\dev.ps1"
 ```
 
-### Optional: add DevTools to your PATH
+### Global install (recommended)
 
-After cloning, you can run the installer to add DevTools to your user PATH:
+From the DevTools folder, add it to your **user PATH** (no admin required):
+
+```powershell
+.\dev.cmd self install
+```
+
+Close and reopen PowerShell, then run:
+
+```powershell
+dev
+```
+
+See [docs/installation.md](docs/installation.md) for details, uninstall steps, and PATH troubleshooting.
+
+### Legacy: install.ps1
+
+After cloning, you can also run:
 
 ```powershell
 .\install.ps1
 ```
 
-Close and reopen your terminal, then run:
-
-```powershell
-dev
-```
+This adds DevTools to your user PATH and creates `config.json` on first run. Prefer `dev self install` for the integrated workflow.
 
 ---
 
@@ -208,6 +221,8 @@ If DevTools is on your PATH after running `install.ps1`, you can use `dev` inste
 | `recent` | Open a recently used project | `dev recent` |
 | `info` | Inspect project details and quick actions | `dev info walkreplay` |
 | `help` | Show beginner-friendly help | `dev help` |
+| `test` | Run automated validation (works from any directory) | `dev test` |
+| `self` | Manage global PATH install | `dev self install` |
 
 **Backup safety:** Backup shows repositories with changes and asks for confirmation before committing or pushing. Nothing is committed or pushed without your approval.
 
@@ -286,6 +301,16 @@ Inspect a project without leaving DevTools — location, Git status, branch, rem
 Stack detection is inferred from common project files (for example `package.json`, `next.config.js`, `supabase/`).
 
 Detailed command docs: [docs/commands.md](docs/commands.md)
+
+---
+
+## Home Dashboard
+
+When all required checks pass, Home shows **Ready to Build** and *Everything required is ready.*
+
+If you have opened projects before, a **Recent Projects** list appears. Press **O** to open one quickly.
+
+Status icons use emoji in modern terminals (Windows Terminal, VS Code) and ASCII fallbacks (`*`, `-`, `x`, `o`) elsewhere. Set `DEVTOOLS_ASCII=1` to force ASCII.
 
 ---
 
@@ -373,13 +398,25 @@ DevTools runs GitHub Actions on pushes and pull requests.
 The current CI checks:
 
 - PowerShell syntax
-- Required project files
+- Required project files and command scripts
 - Example configuration validity
-- Basic command structure
+- Home status focal with empty attention items (automated smoke)
+
+**Optional:** [PSScriptAnalyzer](https://github.com/PowerShell/PSScriptAnalyzer) adds extra PowerShell lint checks during `dev test`. Automated tests pass without it. To enable linting:
+
+```powershell
+Install-Module PSScriptAnalyzer -Scope CurrentUser
+```
 
 Manual smoke testing is still used before releases. See [docs/testing/smoke-test.md](docs/testing/smoke-test.md).
 
-Run the same checks locally:
+Run the same checks locally from **any directory**:
+
+```powershell
+dev test
+```
+
+Or invoke the test script directly from the DevTools folder:
 
 ```powershell
 pwsh ./tests/Test-DevTools.ps1
@@ -441,6 +478,20 @@ dev doctor
 ### Cursor command not found
 
 Install Cursor and ensure the `cursor` command is available in your PATH, or choose a different editor in **Settings**.
+
+### Status icons look wrong on Home
+
+DevTools falls back to ASCII symbols on older consoles. Use Windows Terminal or VS Code, or set:
+
+```powershell
+$env:DEVTOOLS_FORCE_UNICODE = '1'
+```
+
+To always use ASCII:
+
+```powershell
+$env:DEVTOOLS_ASCII = '1'
+```
 
 ---
 

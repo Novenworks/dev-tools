@@ -15,6 +15,24 @@ For a quick overview, see the [README](../README.md).
 | `dev quick` | Quick Actions for frequent tasks |
 | `dev help` | Beginner-friendly help |
 
+### Quick Actions
+
+Menu options:
+
+1. Open Recent Project  
+2. Open Project Search  
+3. Repository Status  
+4. Update Repositories  
+5. Clone Missing Repositories  
+6. Main Menu  
+7. Exit  
+
+Returns to Quick Actions after each action unless you choose Main Menu or Exit.
+
+### Main Menu
+
+Includes Home, Quick Actions, Recent Projects, Project Info, Doctor, Configure, Settings, clone/update/status/backup/open workflows, Help, and Exit (14 options).
+
 ---
 
 ## Setup and configuration
@@ -35,6 +53,44 @@ For a quick overview, see the [README](../README.md).
 | `dev update` | Pull latest changes in existing repos |
 | `dev status` | Show repository status across the workspace |
 | `dev backup` | Review changed repos and back up safely |
+
+---
+
+## Quality and validation
+
+| Command | Description |
+| --- | --- |
+| `dev test` | Run the automated DevTools validation suite |
+
+`dev test` locates your DevTools installation automatically and can be run from any working directory.
+
+Example:
+
+```powershell
+dev test
+```
+
+---
+
+## Global install
+
+| Command | Description |
+| --- | --- |
+| `dev self install` | Add DevTools to your user PATH |
+| `dev self uninstall` | Remove DevTools from your user PATH |
+| `dev self path` | Show install root and PATH status |
+
+Examples:
+
+```powershell
+dev self install
+dev self path
+dev self uninstall
+```
+
+Only the **User** PATH is modified. Admin privileges are not required.
+
+See [installation.md](installation.md) for the full install guide.
 
 ---
 
@@ -75,6 +131,12 @@ dev recent
 
 On Home, press **O** to open a recent project when the list is shown.
 
+### Home dashboard
+
+When all required checks pass, Home shows **Ready to Build** and *Everything required is ready.*
+
+Status symbols use emoji when the terminal supports Unicode and ASCII fallbacks otherwise. Environment overrides: `DEVTOOLS_ASCII=1`, `DEVTOOLS_FORCE_UNICODE=1`.
+
 ### Project Info
 
 Shows location, Git status, branch, remote, last commit, inferred stack, and quick actions.
@@ -101,5 +163,7 @@ Project Info is read-only. It does not modify files, install packages, or run de
 
 ## See also
 
+- [Installation guide](installation.md)
 - [Smoke test checklist](testing/smoke-test.md)
 - [Contributing](../CONTRIBUTING.md)
+- [Project context](../PROJECT_CONTEXT.md) (maintainers and AI assistants)

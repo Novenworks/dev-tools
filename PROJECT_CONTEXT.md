@@ -88,7 +88,7 @@ At the time of writing, DevTools includes:
 
 - Guided setup (`configure`)
 - Settings menu and About screen
-- Home dashboard with system status and collapsed checklist
+- Home dashboard with system status, collapsed checklist, and ready-state messaging
 - Main menu and Help
 - Quick Actions (`quick`) for frequent tasks
 
@@ -96,6 +96,7 @@ At the time of writing, DevTools includes:
 
 - Doctor with required/optional checks and interactive fixes
 - DevTools-native GitHub sign-in messaging on Home (no raw `gh auth status` on Home)
+- Display symbols with emoji or ASCII fallback (`Get-DevToolsDisplaySymbol`)
 
 **Repository workflows**
 
@@ -118,7 +119,9 @@ At the time of writing, DevTools includes:
 
 **Commands (entry point: `dev` / `dev.cmd`)**
 
-`home`, `menu`, `quick`, `recent`, `info`, `configure`, `settings`, `doctor`, `clone`, `update`, `status`, `backup`, `open`, `help`
+`home`, `menu`, `quick`, `recent`, `info`, `test`, `self`, `configure`, `settings`, `doctor`, `clone`, `update`, `status`, `backup`, `open`, `help`
+
+`dev self install` adds the installation folder to the **User** PATH only (no admin, no Machine PATH).
 
 Update this section when features ship or are removed.
 
@@ -203,7 +206,7 @@ Goals: stable command interface, complete documentation, mature onboarding, reli
 
 ```text
 dev.ps1 / dev.cmd          Entry point (dev.cmd bypasses execution policy)
-install.ps1                Optional PATH setup
+install.ps1                Legacy PATH setup (prefer `dev self install`)
 
 commands/                  User-facing commands (thin wrappers)
 lib/                       Shared business logic
@@ -221,7 +224,7 @@ VERSION                    Single source for version string
 | --- | --- |
 | `utils.ps1` | Command detection, version helpers, prompts |
 | `copy.ps1` | Product mission, status labels, Doctor copy catalog |
-| `ui.ps1` | Screens, headers, menus, formatting |
+| `ui.ps1` | Screens, headers, menus, display symbols (emoji/ASCII), formatting |
 | `config.ps1` | Load/save `config.json`, first-run setup |
 | `git.ps1` | Repository status, pull, workspace repo discovery |
 | `github.ps1` | GitHub CLI helpers, auth check, repo listing |
@@ -230,6 +233,8 @@ VERSION                    Single source for version string
 | `projects.ps1` | Workspace project list, search, open-with-editor |
 | `recent.ps1` | Recent project storage and pickers |
 | `project-info.ps1` | Project inspection, stack detection, info actions |
+| `test.ps1` | Automated test runner wrapper and optional-tool reports |
+| `self.ps1` | User PATH install, uninstall, and diagnostics |
 
 ### Guidelines
 
@@ -261,6 +266,7 @@ Each document has a single responsibility.
 | `PROJECT_CONTEXT.md` | Maintainers, AI | Vision, architecture, priorities |
 | `README.md` | Public | Landing page, install, quick start |
 | `docs/commands.md` | Users | Detailed command reference |
+| `docs/installation.md` | Users | Clone, global install, PATH management |
 | `docs/testing/` | Maintainers | Smoke test process |
 | `CHANGELOG.md` | Public | Release history |
 | `CONTRIBUTING.md` | Contributors | How to contribute |
@@ -321,9 +327,8 @@ If not, add a GitHub Issue to the backlog instead of expanding the current miles
 
 **Highest**
 
-- Stability (v0.3.1 items: onboarding edge cases, emoji fallbacks, clean install validation)
-- Documentation and README screenshots
-- Onboarding polish
+- Stability (v0.3.1 remainder: onboarding edge cases, README screenshots, clean install validation)
+- Documentation sync with shipped features
 - Keep CI green
 
 **Medium**
@@ -371,6 +376,9 @@ Significant decisions (append new entries; do not delete history).
 | — | **Manual smoke tests + CI syntax checks** | CI validates structure/syntax; human smoke test catches UX regressions before release. |
 | — | **Recent data in `config/` (gitignored)** | User-specific; not committed. |
 | — | **Backup always confirms** | Safety over automation; no silent commits or pushes. |
+| — | **Display symbols with ASCII fallback** | `Get-DevToolsDisplaySymbol` avoids Unicode rendering errors on legacy consoles. |
+| — | **Home accepts empty attention items** | `[AllowEmptyCollection()]` plus ready-state copy when all required checks pass. |
+| — | **User PATH via `dev self install`** | Safe global `dev` access; User PATH only; conflict detection before install. |
 
 ---
 

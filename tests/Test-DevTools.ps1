@@ -119,6 +119,8 @@ $commandFiles = @(
     'commands/quick.ps1'
     'commands/recent.ps1'
     'commands/info.ps1'
+    'commands/test.ps1'
+    'commands/self.ps1'
 )
 
 foreach ($commandFile in $commandFiles) {
@@ -128,6 +130,8 @@ foreach ($commandFile in $commandFiles) {
 $libFiles = @(
     'lib/recent.ps1'
     'lib/project-info.ps1'
+    'lib/test.ps1'
+    'lib/self.ps1'
 )
 
 foreach ($libFile in $libFiles) {
@@ -189,7 +193,7 @@ Test-ReadmeContains -Text 'Commands' -Label 'Commands' | Out-Null
 Test-ReadmeContains -Text 'Roadmap' -Label 'Roadmap' | Out-Null
 
 # Verify main commands are loadable (syntax-only via AST on command scripts)
-$mainCommands = @('home', 'menu', 'configure', 'settings', 'doctor', 'clone', 'update', 'status', 'backup', 'open', 'help', 'quick', 'recent', 'info')
+$mainCommands = @('home', 'menu', 'configure', 'settings', 'doctor', 'clone', 'update', 'status', 'backup', 'open', 'help', 'quick', 'recent', 'info', 'test', 'self')
 
 foreach ($commandName in $mainCommands) {
     $commandPath = Join-Path $ProjectRoot "commands\$commandName.ps1"
@@ -207,26 +211,29 @@ foreach ($commandName in $mainCommands) {
     }
 }
 
-# Optional PSScriptAnalyzer
-if (Get-Module -ListAvailable -Name PSScriptAnalyzer) {
-    Import-Module PSScriptAnalyzer -ErrorAction SilentlyContinue
+# Home status focal accepts empty attention items when all checks pass
+try {
+    $DevToolsRoot = $ProjectRoot
+    . (Join-Path $ProjectRoot 'lib\utils.ps1')
+    . (Join-Path $ProjectRoot 'lib\copy.ps1')
+    . (Join-Path $ProjectRoot 'lib\ui.ps1')
+    . (Join-Path $ProjectRoot 'lib\home.ps1')
 
-    if (Get-Command Invoke-ScriptAnalyzer -ErrorAction SilentlyContinue) {
-        $analyzerResults = Invoke-ScriptAnalyzer -Path $ProjectRoot -Recurse -Severity Error, Warning -ErrorAction SilentlyContinue
-
-        if ($analyzerResults) {
-            foreach ($result in $analyzerResults) {
-                Write-Host "LINT: $($result.ScriptName):$($result.Line) $($result.Message)" -ForegroundColor Yellow
-            }
-        }
-        else {
-            Write-TestPass 'PSScriptAnalyzer found no errors or warnings'
-        }
+    $readyStatus = [pscustomobject]@{
+        OverallStatus     = 'Ready to Build'
+        RequiredAttention = 0
     }
+
+    Show-HomeStatusFocal -Status $readyStatus -AttentionItems @() | Out-Null
+    Write-TestPass 'Show-HomeStatusFocal accepts empty AttentionItems'
 }
-else {
-    Write-Host 'PSScriptAnalyzer not installed. Skipping lint step.' -ForegroundColor DarkGray
+catch {
+    Write-TestFailure "Show-HomeStatusFocal empty AttentionItems: $($_.Exception.Message)"
 }
+
+# Optional development tools (does not affect pass/fail)
+. (Join-Path $ProjectRoot 'lib\test.ps1')
+Invoke-OptionalPSScriptAnalyzerLint -ProjectRoot $ProjectRoot
 
 # Summary
 Write-Host ''

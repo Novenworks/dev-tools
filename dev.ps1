@@ -7,7 +7,8 @@ param(
     [string[]]$CommandArgs
 )
 
-$DevToolsRoot = $PSScriptRoot
+$script:DevToolsRoot = $PSScriptRoot
+$DevToolsRoot = $script:DevToolsRoot
 $script:DevToolsCommandArgs = @($CommandArgs)
 
 . (Join-Path $DevToolsRoot 'lib\utils.ps1')
@@ -21,6 +22,8 @@ $script:DevToolsCommandArgs = @($CommandArgs)
 . (Join-Path $DevToolsRoot 'lib\projects.ps1')
 . (Join-Path $DevToolsRoot 'lib\recent.ps1')
 . (Join-Path $DevToolsRoot 'lib\project-info.ps1')
+. (Join-Path $DevToolsRoot 'lib\test.ps1')
+. (Join-Path $DevToolsRoot 'lib\self.ps1')
 
 $configSetup = Initialize-DevToolsConfig
 $script:FirstRun = $configSetup.Created
@@ -41,7 +44,7 @@ catch {
 
 $commandName = $Command.ToLower()
 
-if ($script:FirstRun) {
+if ($script:FirstRun -and $commandName -notin @('self', 'test')) {
     . (Join-Path $DevToolsRoot 'commands\configure.ps1')
     $Config = Set-ScriptConfig
     $script:FirstRun = $false
@@ -53,7 +56,7 @@ $commandFile = Join-Path $DevToolsRoot "commands\$commandName.ps1"
 
 if (-not (Test-Path $commandFile)) {
     ShowError "Unknown command: $Command"
-    ShowInfo 'Valid commands: home, menu, quick, recent, info, configure, settings, doctor, clone, update, status, backup, open, help'
+    ShowInfo 'Valid commands: home, menu, quick, recent, info, test, self, configure, settings, doctor, clone, update, status, backup, open, help'
     exit 1
 }
 
@@ -64,6 +67,6 @@ if ($commandName -eq 'home' -and -not $script:FirstRun) {
 
 . $commandFile
 
-if ($commandName -notin @('home', 'menu', 'configure', 'settings', 'quick')) {
+if ($commandName -notin @('home', 'menu', 'configure', 'settings', 'quick', 'test', 'self')) {
     Wait-ForKey
 }

@@ -5,9 +5,9 @@ function Get-StatusIndicator {
     )
 
     switch ($OverallStatus) {
-        'Ready to Build' { return [char]0x1F7E2 }
-        'Almost Ready' { return [char]0x1F7E1 }
-        default { return [char]0x1F7E0 }
+        'Ready to Build' { return Get-DevToolsDisplaySymbol -Name 'status-ready' }
+        'Almost Ready' { return Get-DevToolsDisplaySymbol -Name 'status-almost' }
+        default { return Get-DevToolsDisplaySymbol -Name 'status-setup' }
     }
 }
 
@@ -18,14 +18,14 @@ function Get-HomeChecklistIcon {
     )
 
     if ($Passed) {
-        return [char]0x2713
+        return Get-DevToolsDisplaySymbol -Name 'check-pass'
     }
 
     if ($Optional) {
-        return [char]0x25CB
+        return Get-DevToolsDisplaySymbol -Name 'check-optional'
     }
 
-    return [char]0x2717
+    return Get-DevToolsDisplaySymbol -Name 'check-fail'
 }
 
 function Show-HomeChecklist {
@@ -61,7 +61,9 @@ function Show-HomeChecklist {
 function Show-HomeStatusFocal {
     param(
         [Parameter(Mandatory = $true)]$Status,
-        [Parameter(Mandatory = $true)][array]$AttentionItems
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [array]$AttentionItems
     )
 
     $indicator = Get-StatusIndicator -OverallStatus $Status.OverallStatus
@@ -75,6 +77,8 @@ function Show-HomeStatusFocal {
     Write-Host ''
 
     if ($Status.RequiredAttention -eq 0) {
+        ShowInfo 'Everything required is ready.'
+        Write-Host ''
         return
     }
 
@@ -222,8 +226,7 @@ function Invoke-HomeGitHubSignIn {
     }
 
     if (Test-GhAuthenticated) {
-        $checkMark = [char]0x2713
-        ShowSuccess "$checkMark GitHub login successful."
+        ShowSuccess "$(Get-DevToolsDisplaySymbol -Name 'success-mark') GitHub login successful."
         Wait-ForKey -Message 'Press Enter to continue'
         return $true
     }

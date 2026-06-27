@@ -1,3 +1,37 @@
+function Get-DevToolsRoot {
+    <#
+    .SYNOPSIS
+        Returns the DevTools installation root directory.
+    .DESCRIPTION
+        Canonical root detection based on the running installation, not the current working directory.
+    #>
+    if ($script:DevToolsRoot) {
+        $candidate = $script:DevToolsRoot
+        if (Test-Path -LiteralPath (Join-Path $candidate 'dev.ps1')) {
+            return $candidate
+        }
+    }
+
+    if ($PSScriptRoot -and ((Split-Path -Leaf $PSScriptRoot) -eq 'lib')) {
+        $candidate = Split-Path -Parent $PSScriptRoot
+        if (Test-Path -LiteralPath (Join-Path $candidate 'dev.ps1')) {
+            return $candidate
+        }
+    }
+
+    $devCommand = Get-Command -Name 'dev' -CommandType Application -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+
+    if ($devCommand -and $devCommand.Source) {
+        $candidate = Split-Path -Parent $devCommand.Source
+        if (Test-Path -LiteralPath (Join-Path $candidate 'dev.ps1')) {
+            return $candidate
+        }
+    }
+
+    return $null
+}
+
 function Get-CommandPath {
     param(
         [Parameter(Mandatory = $true)]

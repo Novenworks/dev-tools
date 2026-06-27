@@ -44,8 +44,19 @@ cd C:\Projects\dev-tools
 - [ ] Workspace displayed
 - [ ] GitHub owners displayed
 - [ ] Repository count displayed
-- [ ] Status displayed
+- [ ] System Status displayed
+- [ ] When all required checks pass, shows **Ready to Build**
+- [ ] When ready, shows “Everything required is ready.” (no parameter errors)
+- [ ] Status icons render without errors (emoji or ASCII fallback)
+- [ ] Recent Projects section appears after opening a project
+- [ ] Press **O** opens recent project picker when recents exist
 - [ ] Menu options respond correctly
+
+**Command:**
+
+```powershell
+.\dev.cmd home
+```
 
 ---
 
@@ -223,6 +234,7 @@ cd C:\Projects\dev-tools
 Before publishing:
 
 - [ ] All smoke tests passed
+- [ ] Automated validation passed (`tests/Test-DevTools.ps1`)
 - [ ] Git status clean
 - [ ] Changes committed
 - [ ] Changes pushed

@@ -38,8 +38,10 @@ DevTools uses GitHub labels and milestones to organize work.
 1. Fork the repository.
 2. Create a focused branch for your change.
 3. Keep changes small and easy to review.
-4. Test your change with `.\dev.cmd` on Windows.
+4. Test your change with `.\dev.cmd` on Windows and run `tests/Test-DevTools.ps1`.
 5. Open a pull request with a clear description.
+
+Maintainers and AI assistants: read [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) before larger changes.
 
 ### Beginner-friendly note
 
@@ -58,6 +60,12 @@ Use `.\dev.cmd` to avoid PowerShell execution policy issues.
 ## Before submitting a pull request
 
 Please run:
+
+```powershell
+dev test
+```
+
+Or invoke the test script directly:
 
 ```powershell
 pwsh ./tests/Test-DevTools.ps1
