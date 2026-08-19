@@ -34,6 +34,13 @@ For a quick overview, see the [README](../README.md).
 | `dev update` | Pull latest changes |
 | `dev status` | Repository status overview |
 | `dev backup` | Safe backup workflow |
+| `dev deploy` | Deployment Manager (Vercel) |
+| `dev deploy audit` | Compare GitHub repositories against Vercel (read-only) |
+| `dev deploy plan` | Preview exactly what sync would create (read-only) |
+| `dev deploy sync` | Create missing Vercel projects after confirmation |
+| `dev deploy verify` | Check production deployments (read-only) |
+| `dev deploy status` | Show deployment settings and readiness (read-only) |
+| `dev deploy help` | Deployment Manager help |
 | `dev help` | Beginner-friendly help |
 
 Commands under **`dev self`** manage DevTools itself. They do not replace `dev doctor`, which checks your general development environment.
@@ -65,7 +72,7 @@ Returns to Quick Actions after each action unless you choose Main Menu or Exit.
 
 ### Main Menu
 
-Includes Home, Quick Actions, Recent Projects, Project Info, Doctor, Configure, Settings, clone/update/status/backup/open workflows, Help, and Exit (14 options).
+Includes Home, Quick Actions, Recent Projects, Project Info, Doctor, Configure, Settings, clone/update/status/backup/open workflows, Deployment Manager, Help, and Exit (15 options).
 
 ---
 
@@ -87,6 +94,44 @@ Includes Home, Quick Actions, Recent Projects, Project Info, Doctor, Configure, 
 | `dev update` | Pull latest changes in existing repos |
 | `dev status` | Show repository status across the workspace |
 | `dev backup` | Review changed repos and back up safely |
+
+---
+
+## Deployments
+
+Deployment Manager compares your GitHub repositories with Vercel, onboards the ones that are missing, and verifies production. Vercel is optional — DevTools is fully usable without it.
+
+| Command | Changes anything? | Description |
+| --- | --- | --- |
+| `dev deploy` | No | Interactive Deployment Manager menu |
+| `dev deploy audit` | **No** | Discover, inspect, match, and classify every candidate |
+| `dev deploy plan` | **No** | Dry run: the exact projects sync would create |
+| `dev deploy sync` | **Yes** | Create missing projects and start first deployments |
+| `dev deploy verify` | **No** | Confirm production deployments are healthy |
+| `dev deploy status` | **No** | Show deployment settings and readiness |
+| `dev deploy help` | **No** | Deployment Manager help |
+
+Options:
+
+| Option | Applies to | Meaning |
+| --- | --- | --- |
+| `--apply` | `sync` | Skip the confirmation prompt. Creates real Vercel projects. |
+| `--owner NAME` | all | Limit the operation to one GitHub owner |
+| `--no-http` | `verify` | Skip the production URL health check |
+
+Examples:
+
+```powershell
+dev deploy audit
+dev deploy plan
+dev deploy sync
+dev deploy verify --no-http
+dev deploy audit --owner Novenworks
+```
+
+`audit`, `plan`, `verify`, and `status` never create, deploy, or modify anything. Only `sync` mutates, and it always shows the plan and asks for confirmation first (default answer: No).
+
+Full guide: [deployments.md](deployments.md)
 
 ---
 
@@ -211,6 +256,9 @@ Project Info is read-only. It does not modify files, install packages, or run de
 ## Safety notes
 
 - Backup asks before committing or pushing
+- Deployment `audit`, `plan`, `verify`, and `status` are read-only
+- Deployment `sync` shows the plan and requires confirmation before creating anything
+- Existing healthy Vercel projects are never modified, renamed, redeployed, or disconnected
 - Clone skips existing folders
 - Update runs `git pull` only inside existing repositories
 - Project Info may open a GitHub URL in your browser when you choose that action
@@ -221,6 +269,7 @@ Project Info is read-only. It does not modify files, install packages, or run de
 
 - [Installation guide](installation.md)
 - [Configuration](configuration.md)
+- [Deployment Manager](deployments.md)
 - [Testing](testing.md)
 - [Roadmap](roadmap.md)
 - [FAQ](faq.md)

@@ -62,6 +62,28 @@ Runs automated validation (syntax, required files, config). Safe to run from any
 
 ---
 
+## Deployments
+
+**Do I need Vercel to use DevTools?**  
+No. Deployment Manager is optional. `dev doctor` stays green and every other command works without it.
+
+**Where does DevTools store my Vercel token?**  
+Nowhere. It is read from the `VERCEL_TOKEN` environment variable each time, and is never written to `config.json`, a report, or a log.
+
+**Will `dev deploy audit` change anything?**  
+No. `audit`, `plan`, `verify`, and `status` are read-only. Only `dev deploy sync` can create a Vercel project, and it shows the plan and asks first — the default answer is No.
+
+**Will running sync twice create duplicate projects?**  
+No. Sync is idempotent. On a second run the project already exists, audits as `READY`, and nothing happens.
+
+**Why did a repository come back as `AMBIGUOUS_MATCH`?**  
+Two or more Vercel projects could belong to it. DevTools refuses to guess. Add a `projectMappings` entry, or connect the correct project to GitHub in Vercel.
+
+**Why was my repository skipped?**  
+By default only repositories with `demo` in the name are candidates. Add it to `includeRepositories`, or widen `includeNamePatterns`. See [deployments.md](deployments.md).
+
+---
+
 ## Troubleshooting
 
 **`dev` is not recognized after install**  
@@ -76,5 +98,6 @@ Use global `dev` (routes through `dev.cmd`) or run `.\dev.cmd` from the repo fol
 
 - [Installation guide](installation.md)
 - [Command reference](commands.md)
+- [Deployment Manager](deployments.md)
 - [Roadmap](roadmap.md)
 - [README](../README.md)

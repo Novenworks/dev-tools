@@ -205,6 +205,43 @@ dev self path
 
 ---
 
+## Deployment Manager
+
+Vercel is optional. Run this section only when you use Deployment Manager.
+
+**Without a Vercel token:**
+
+- [ ] `dev doctor` still reports the same overall status (Vercel does not make DevTools "not ready")
+- [ ] Doctor shows `Vercel authentication  AUTH REQUIRED` with setup instructions
+- [ ] No token value appears anywhere on screen
+
+**With `$env:VERCEL_TOKEN` set:**
+
+- [ ] `dev deploy` menu opens and every option returns cleanly
+- [ ] `dev deploy status` shows provider, team, owners, and include patterns
+- [ ] `dev deploy audit` completes and creates **nothing**
+- [ ] Audit table stays readable with long repository names
+- [ ] `dev deploy plan` lists proposed creations and ends with `NO CHANGES HAVE BEEN MADE.`
+- [ ] `dev deploy sync` shows the plan and asks `Continue? [y/N]`
+- [ ] Answering `n` (or pressing Enter) creates nothing
+- [ ] `dev deploy verify` completes and creates nothing
+- [ ] `reports/deployments/latest.json` is written and contains no token
+- [ ] `git status` shows no new tracked files from the audit
+
+**Commands:**
+
+```powershell
+.\dev.cmd deploy
+.\dev.cmd deploy status
+.\dev.cmd deploy audit
+.\dev.cmd deploy plan
+.\dev.cmd deploy verify
+```
+
+Do **not** run `dev deploy sync` to completion during a smoke test unless you intend to create real Vercel projects.
+
+---
+
 ## Navigation
 
 - [ ] Home
@@ -212,6 +249,7 @@ dev self path
 - [ ] Quick Actions
 - [ ] Recent Projects
 - [ ] Project Info
+- [ ] Deployment Manager
 - [ ] Help
 - [ ] Settings
 - [ ] Exit
@@ -224,6 +262,7 @@ dev self path
 .\dev.cmd quick
 .\dev.cmd recent
 .\dev.cmd info
+.\dev.cmd deploy
 .\dev.cmd help
 .\dev.cmd settings
 ```
