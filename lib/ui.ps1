@@ -356,8 +356,9 @@ function ShowMainMenuOptions {
     Write-Host '  10 Repository status'
     Write-Host '  11 Backup changed repositories'
     Write-Host '  12 Open project'
-    Write-Host '  13 Help'
-    Write-Host '  14 Exit'
+    Write-Host '  13 Deployment Manager'
+    Write-Host '  14 Help'
+    Write-Host '  15 Exit'
     Write-Host ''
     Write-Host 'Type a number and press Enter.' -ForegroundColor DarkGray
     Write-Host ''

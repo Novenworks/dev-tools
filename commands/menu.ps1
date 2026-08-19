@@ -33,8 +33,9 @@ while ($true) {
         '10' { Invoke-DevToolsMenuAction { . (Join-Path $DevToolsRoot 'commands\status.ps1') } }
         '11' { Invoke-DevToolsMenuAction { . (Join-Path $DevToolsRoot 'commands\backup.ps1') } }
         '12' { Invoke-DevToolsMenuAction { . (Join-Path $DevToolsRoot 'commands\open.ps1') } }
-        '13' { Invoke-DevToolsMenuAction { . (Join-Path $DevToolsRoot 'commands\help.ps1') } }
-        '14' { exit 0 }
+        '13' { Invoke-DeploymentManagerMenu -ConfigObject $Config | Out-Null }
+        '14' { Invoke-DevToolsMenuAction { . (Join-Path $DevToolsRoot 'commands\help.ps1') } }
+        '15' { exit 0 }
         default {
             ShowError 'That option is not available. Please choose a number from the menu.'
             Wait-ForKey

@@ -285,5 +285,33 @@ function Show-DoctorCheckResults {
         ShowDoctorCheckCard -Check $check
     }
 
+    Show-DoctorDeploymentSection
+
     ShowDoctorSystemStatus -Status $status
+}
+
+function Show-DoctorDeploymentSection {
+    <#
+    .SYNOPSIS
+        Reports Deployment Manager readiness without affecting overall system status.
+    .DESCRIPTION
+        Vercel is optional. Users who never run "dev deploy" stay "Ready to Build"
+        whether or not a Vercel token is present.
+    #>
+    if (-not (Get-Command Get-DeploymentPrerequisites -ErrorAction SilentlyContinue)) {
+        return
+    }
+
+    try {
+        $deploymentConfig = Get-DeploymentConfig -ConfigObject $Config
+        $state = Get-DeploymentPrerequisites -DeploymentConfig $deploymentConfig
+    }
+    catch {
+        return
+    }
+
+    Show-DeploymentPrerequisites -State $state
+
+    ShowInfo 'Deployment Manager is optional. DevTools is ready without it.'
+    Write-Host ''
 }
