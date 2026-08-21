@@ -96,6 +96,10 @@ function Import-DevToolsConfigRaw {
         $raw | Add-Member -NotePropertyName 'autoUpdate' -NotePropertyValue $false -Force
     }
 
+    # Configs written before Deployment Manager shipped have no "deployments"
+    # section. They keep working: the section is optional and every field falls
+    # back to a safe default when it is read.
+
     return $raw
 }
 
@@ -129,7 +133,14 @@ function Save-DevToolsConfig {
         autoUpdate        = [bool]$ConfigObject.autoUpdate
     }
 
-    $json = $payload | ConvertTo-Json -Depth 5
+    # Preserve settings owned by other features (for example "deployments") so
+    # saving one preference never silently deletes another.
+    foreach ($property in $ConfigObject.PSObject.Properties) {
+        if ($payload.Contains($property.Name)) { continue }
+        $payload[$property.Name] = $property.Value
+    }
+
+    $json = $payload | ConvertTo-Json -Depth 8
     Set-Content -Path (Get-DevToolsConfigPath) -Value $json -Encoding UTF8
 }
 

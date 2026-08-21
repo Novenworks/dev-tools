@@ -167,6 +167,7 @@ $commandFiles = @(
     'commands/info.ps1'
     'commands/test.ps1'
     'commands/self.ps1'
+    'commands/deploy.ps1'
 )
 
 foreach ($commandFile in $commandFiles) {
@@ -178,6 +179,12 @@ $libFiles = @(
     'lib/project-info.ps1'
     'lib/test.ps1'
     'lib/self.ps1'
+    'lib/deploy.ps1'
+    'lib/deploy-config.ps1'
+    'lib/deploy-github.ps1'
+    'lib/deploy-vercel.ps1'
+    'lib/deploy-model.ps1'
+    'lib/deploy-report.ps1'
 )
 
 foreach ($libFile in $libFiles) {
@@ -222,6 +229,20 @@ try {
         }
     }
 
+    if ($configJson.PSObject.Properties.Name -contains 'deployments') {
+        Write-TestPass 'config.example.json includes the deployments section'
+
+        if ($configJson.deployments.repositoryFilters) {
+            Write-TestPass 'config.example.json includes deployment repository filters'
+        }
+        else {
+            Write-TestFailure 'config.example.json deployments section missing repositoryFilters'
+        }
+    }
+    else {
+        Write-TestFailure 'config.example.json missing key: deployments'
+    }
+
     if (-not $failed) {
         $configValid = $true
         Write-TestPass 'config.example.json is valid JSON with required keys'
@@ -229,6 +250,39 @@ try {
 }
 catch {
     Write-TestFailure "config.example.json is not valid JSON: $($_.Exception.Message)"
+}
+
+# No committed file may contain a Vercel token.
+$trackedTextFiles = Get-ChildItem -Path $ProjectRoot -Recurse -File -Include '*.ps1', '*.json', '*.md', '*.cmd', '*.yml' |
+    Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' -and $_.Name -ne 'config.json' }
+
+$secretFindings = @()
+foreach ($trackedFile in $trackedTextFiles) {
+    $trackedContent = Get-Content -LiteralPath $trackedFile.FullName -Raw -ErrorAction SilentlyContinue
+    if (-not $trackedContent) { continue }
+
+    if ($trackedContent -match '(?i)vercel[_-]?token\s*[:=]\s*[''"][A-Za-z0-9_\-]{16,}[''"]') {
+        $secretFindings += $trackedFile.FullName
+    }
+}
+
+if ($secretFindings.Count -eq 0) {
+    Write-TestPass 'No Vercel token literals are committed'
+}
+else {
+    Write-TestFailure "Possible committed Vercel token in: $($secretFindings -join ', ')"
+}
+
+$gitignoreePath = Join-Path $ProjectRoot '.gitignore'
+if (Test-Path -LiteralPath $gitignoreePath) {
+    $gitignoreContent = Get-Content -LiteralPath $gitignoreePath -Raw
+
+    if ($gitignoreContent -match 'reports/') {
+        Write-TestPass '.gitignore excludes generated deployment reports'
+    }
+    else {
+        Write-TestFailure '.gitignore must exclude reports/'
+    }
 }
 
 # README content checks
@@ -271,7 +325,7 @@ if (Test-Path -LiteralPath $installationDocPath) {
 }
 
 # Verify main commands are loadable (syntax-only via AST on command scripts)
-$mainCommands = @('home', 'menu', 'configure', 'settings', 'doctor', 'clone', 'update', 'status', 'backup', 'open', 'help', 'quick', 'recent', 'info', 'test', 'self')
+$mainCommands = @('home', 'menu', 'configure', 'settings', 'doctor', 'clone', 'update', 'status', 'backup', 'open', 'help', 'quick', 'recent', 'info', 'test', 'self', 'deploy')
 
 foreach ($commandName in $mainCommands) {
     $commandPath = Join-Path $ProjectRoot "commands\$commandName.ps1"
@@ -307,6 +361,29 @@ try {
 }
 catch {
     Write-TestFailure "Show-HomeStatusFocal empty AttentionItems: $($_.Exception.Message)"
+}
+
+# Deployment Manager tests run in a child process so their service mocks stay isolated.
+$deployTestScript = Join-Path $ProjectRoot 'tests\Test-Deploy.ps1'
+
+if (Test-Path -LiteralPath $deployTestScript) {
+    $deployRunner = 'powershell.exe'
+    $pwshCommand = Get-Command pwsh -ErrorAction SilentlyContinue
+    if ($pwshCommand) { $deployRunner = $pwshCommand.Source }
+
+    Write-Host ''
+    & $deployRunner -NoProfile -ExecutionPolicy Bypass -File $deployTestScript
+    $deployExitCode = $LASTEXITCODE
+
+    if ($deployExitCode -eq 0) {
+        Write-TestPass 'Deployment Manager tests passed'
+    }
+    else {
+        Write-TestFailure "Deployment Manager tests failed (exit code $deployExitCode)"
+    }
+}
+else {
+    Write-TestFailure 'Deployment Manager tests missing: tests/Test-Deploy.ps1'
 }
 
 # Optional development tools (does not affect pass/fail)

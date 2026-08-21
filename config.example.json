@@ -3,5 +3,22 @@
   "githubOwners": ["Novenworks"],
   "defaultEditor": "cursor",
   "autoBackupMessage": "Auto backup",
-  "autoUpdate": false
+  "autoUpdate": false,
+  "deployments": {
+    "provider": "vercel",
+    "vercelTeam": "",
+    "repositoryFilters": {
+      "includeNamePatterns": ["*demo*"],
+      "includeRepositories": [],
+      "excludeRepositories": [],
+      "includeForks": false,
+      "includeArchived": false
+    },
+    "productionBranchOverrides": {},
+    "projectMappings": {},
+    "httpHealthCheck": true,
+    "deploymentTimeoutSeconds": 600,
+    "pollIntervalSeconds": 10,
+    "maxRepositoriesPerOwner": 1000
+  }
 }

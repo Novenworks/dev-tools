@@ -18,6 +18,12 @@ $script:DevToolsCommandArgs = @($CommandArgs)
 . (Join-Path $DevToolsRoot 'lib\git.ps1')
 . (Join-Path $DevToolsRoot 'lib\github.ps1')
 . (Join-Path $DevToolsRoot 'lib\doctor.ps1')
+. (Join-Path $DevToolsRoot 'lib\deploy-config.ps1')
+. (Join-Path $DevToolsRoot 'lib\deploy-github.ps1')
+. (Join-Path $DevToolsRoot 'lib\deploy-vercel.ps1')
+. (Join-Path $DevToolsRoot 'lib\deploy-model.ps1')
+. (Join-Path $DevToolsRoot 'lib\deploy-report.ps1')
+. (Join-Path $DevToolsRoot 'lib\deploy.ps1')
 . (Join-Path $DevToolsRoot 'lib\home.ps1')
 . (Join-Path $DevToolsRoot 'lib\projects.ps1')
 . (Join-Path $DevToolsRoot 'lib\recent.ps1')
@@ -56,7 +62,7 @@ $commandFile = Join-Path $DevToolsRoot "commands\$commandName.ps1"
 
 if (-not (Test-Path $commandFile)) {
     ShowError "Unknown command: $Command"
-    ShowInfo 'Valid commands: home, menu, quick, recent, info, test, self, configure, settings, doctor, clone, update, status, backup, open, help'
+    ShowInfo 'Valid commands: home, menu, quick, recent, info, test, self, configure, settings, doctor, clone, update, status, backup, open, deploy, help'
     exit 1
 }
 
@@ -67,6 +73,6 @@ if ($commandName -eq 'home' -and -not $script:FirstRun) {
 
 . $commandFile
 
-if ($commandName -notin @('home', 'menu', 'configure', 'settings', 'quick', 'test', 'self')) {
+if ($commandName -notin @('home', 'menu', 'configure', 'settings', 'quick', 'test', 'self', 'deploy')) {
     Wait-ForKey
 }

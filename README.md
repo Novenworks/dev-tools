@@ -52,6 +52,7 @@ Recommended screenshots:
 - **Recent Projects** — Jump back into projects you open most often
 - **Project Info** — Inspect Git status, stack, and quick actions
 - **Project search** — Find projects by partial name in large workspaces
+- **Deployment Manager** — Audit many GitHub repositories against Vercel, preview missing deployments, and onboard them safely (optional)
 - **Settings menu** — Update preferences one at a time
 - **Beginner-friendly help** — Plain-language guidance built into the CLI
 - **Automated validation** — CI and local test script (`dev test`) for syntax and project structure
@@ -219,8 +220,31 @@ If DevTools is on your PATH after running `install.ps1`, you can use `dev` inste
 | `help` | Show beginner-friendly help | `dev help` |
 | `test` | Run automated validation (works from any directory) | `dev test` |
 | `self` | Manage DevTools itself (test, update, version, doctor, info, PATH) | `dev self` |
+| `deploy` | Deployment Manager for Vercel (optional) | `dev deploy audit` |
 
 **Backup safety:** Backup shows repositories with changes and asks for confirmation before committing or pushing. Nothing is committed or pushed without your approval.
+
+### Deployment Manager
+
+Compare your GitHub repositories against Vercel and onboard the ones that are missing.
+
+| Command | Changes anything? | What it does |
+| --- | --- | --- |
+| `dev deploy` | No | Interactive Deployment Manager |
+| `dev deploy audit` | **No** | Compare every eligible repository against Vercel |
+| `dev deploy plan` | **No** | Show exactly what `sync` would create |
+| `dev deploy sync` | **Yes** | Create missing projects after you approve |
+| `dev deploy verify` | **No** | Check that production deployments are healthy |
+| `dev deploy status` | **No** | Show deployment settings and readiness |
+
+Vercel is optional. DevTools stays fully usable — and `dev doctor` stays green — without it.
+
+```powershell
+$env:VERCEL_TOKEN = "your-token"
+dev deploy audit
+```
+
+DevTools never stores your Vercel token in `config.json`, a report, or a log. See [docs/deployments.md](docs/deployments.md).
 
 ---
 
@@ -323,6 +347,7 @@ Most users should use **Configure** or **Settings** instead of editing `config.j
 | `defaultEditor` | Editor used by Open Project |
 | `autoBackupMessage` | Prefix for backup commit messages |
 | `autoUpdate` | Reserved for future use |
+| `deployments` | Deployment Manager settings (optional — see [docs/deployments.md](docs/deployments.md)) |
 
 Example:
 
@@ -357,6 +382,10 @@ Example:
 - **Clone** skips folders that already exist
 - **Update** runs `git pull` inside existing repositories
 - `config.json` is local and ignored by Git
+- **Deployment audit, plan, verify, and status change nothing** — only `dev deploy sync` can create Vercel projects, and it always asks first
+- Healthy Vercel projects are never modified, renamed, redeployed, or disconnected
+- Your Vercel token is read from `VERCEL_TOKEN` only, and is never stored, logged, or printed
+- Generated deployment reports stay in the gitignored `reports/` folder
 
 ---
 
@@ -447,6 +476,16 @@ Install Git from [git-scm.com](https://git-scm.com/download/win), restart your t
 ```powershell
 dev doctor
 ```
+
+### Vercel authentication required
+
+Deployment Manager reads your token from the environment:
+
+```powershell
+$env:VERCEL_TOKEN = "your-token"
+```
+
+A session variable is cleared when you close the terminal. See [docs/deployments.md](docs/deployments.md) for team setup and persistence trade-offs.
 
 ### GitHub CLI not authenticated
 

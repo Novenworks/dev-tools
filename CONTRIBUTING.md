@@ -79,6 +79,8 @@ Or invoke the test script directly:
 pwsh ./tests/Test-DevTools.ps1
 ```
 
+`dev test` also runs `tests/Test-Deploy.ps1`, which validates Deployment Manager against fully mocked GitHub and Vercel services. Automated tests must never contact a real service or create a real Vercel project.
+
 If `pwsh` is unavailable, use:
 
 ```powershell

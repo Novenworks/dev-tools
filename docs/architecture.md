@@ -28,6 +28,7 @@ docs/                      User documentation
 tests/                     Automated validation
 .github/                   CI and issue templates
 config/                    Local runtime data (gitignored)
+reports/                   Generated deployment reports (gitignored)
 VERSION                    Single source for version string
 ```
 
@@ -37,9 +38,11 @@ VERSION                    Single source for version string
 
 - Business logic lives in `lib/`.
 - Commands stay thin.
-- No GitHub REST API — use GitHub CLI (`gh`) where needed.
+- No GitHub REST API — use GitHub CLI (`gh`) where needed, including `gh api`.
 - Backup never commits or pushes without confirmation.
 - User config stays local and gitignored.
+- Deployment `audit`, `plan`, `verify`, and `status` are read-only. Only `sync` mutates, and only after confirmation.
+- Credentials come from the environment, never from tracked files.
 
 ---
 
@@ -56,6 +59,12 @@ VERSION                    Single source for version string
 | `project-info.ps1` | Project inspection |
 | `test.ps1` | Test runner wrapper |
 | `self.ps1` | DevTools self-management |
+| `deploy-config.ps1` | Deployment settings, name normalization, eligibility rules |
+| `deploy-github.ps1` | Repository discovery and remote deployability inspection (`gh`) |
+| `deploy-vercel.ps1` | Vercel REST client, pagination, deployment polling |
+| `deploy-model.ps1` | Repository/project matching, status classification, planning |
+| `deploy-report.ps1` | Deployment tables, summaries, JSON reports |
+| `deploy.ps1` | Deployment Manager orchestration (audit, plan, sync, verify) |
 
 ---
 
@@ -64,3 +73,4 @@ VERSION                    Single source for version string
 - [Configuration](configuration.md)
 - [Testing](testing.md)
 - [Command reference](commands.md)
+- [Deployment Manager](deployments.md)

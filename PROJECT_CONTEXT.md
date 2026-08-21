@@ -111,6 +111,14 @@ At the time of writing, DevTools includes:
 - Recent Projects (`recent`) — local history, shown on Home when available
 - Project Info (`info`, `info <name>`) — Git metadata, inferred stack, quick actions
 
+**Deployments (optional)**
+
+- Deployment Manager (`dev deploy`) — Vercel portfolio audit, planning, onboarding, and verification
+- Read-only `audit`, `plan`, `verify`, `status`; mutating `sync` behind explicit confirmation
+- Conservative eligibility rules, safe repository/project matching, idempotent onboarding
+- Machine-readable reports in the gitignored `reports/` folder
+- `VERCEL_TOKEN` is read from the environment only and never stored, logged, or printed
+
 **Quality and community**
 
 - Manual smoke test checklist (`docs/testing/smoke-test.md`)
@@ -124,7 +132,7 @@ DevTools dogfoods itself through `dev self` and `dev test`.
 
 **Commands (entry point: `dev` / `dev.cmd`)**
 
-`home`, `menu`, `quick`, `recent`, `info`, `test`, `self`, `configure`, `settings`, `doctor`, `clone`, `update`, `status`, `backup`, `open`, `help`
+`home`, `menu`, `quick`, `recent`, `info`, `test`, `self`, `configure`, `settings`, `doctor`, `clone`, `update`, `status`, `backup`, `open`, `deploy`, `help`
 
 `dev self install` adds the installation folder to the **User** PATH only (no admin, no Machine PATH).
 
@@ -141,7 +149,7 @@ DevTools is intentionally **not**:
 - a Git replacement
 - an IDE
 - a package manager
-- a deployment platform
+- a deployment platform (DevTools *manages* deployments on Vercel; it never becomes a host or build system of its own)
 - a cloud service
 - a project management application
 - cross-platform (today — Windows only)
@@ -249,6 +257,12 @@ VERSION                    Single source for version string
 | `project-info.ps1` | Project inspection, stack detection, info actions |
 | `test.ps1` | Automated test runner wrapper and optional-tool reports |
 | `self.ps1` | User PATH install, uninstall, and diagnostics |
+| `deploy-config.ps1` | Deployment settings, name normalization, eligibility rules (pure) |
+| `deploy-github.ps1` | Repository discovery and remote deployability inspection via `gh` |
+| `deploy-vercel.ps1` | Vercel REST client, pagination, deployment polling, HTTP health check |
+| `deploy-model.ps1` | Repository/project matching, classification, planning (pure) |
+| `deploy-report.ps1` | Deployment tables, summaries, JSON report generation |
+| `deploy.ps1` | Deployment Manager orchestration and menu |
 
 ### Guidelines
 
@@ -256,7 +270,10 @@ VERSION                    Single source for version string
 - Commands should remain thin wrappers.
 - Avoid duplicated code; prefer shared helpers in `lib/projects.ps1` for search/open flows.
 - Keep modules focused.
-- Do not use the GitHub REST API — use GitHub CLI (`gh`) where needed.
+- Do not use the GitHub REST API directly — use GitHub CLI (`gh`), including `gh api`, where needed.
+- Deployment discovery and reporting must stay read-only. Only `dev deploy sync` mutates, and only after explicit confirmation.
+- Never store credentials in tracked files. Deployment credentials come from the environment.
+- Do not build a provider plugin framework. Vercel is the supported provider today.
 - Do not rewrite `dev-core.ps1` into a monolith.
 - Do not add a root-level `dev.ps1` — PowerShell may prefer it over `dev.cmd` on PATH.
 
@@ -266,9 +283,12 @@ VERSION                    Single source for version string
 | --- | --- | --- |
 | `config.json` | User settings | No (gitignored) |
 | `config/recent-projects.json` | Recent project history | No (gitignored) |
+| `reports/deployments/latest.json` | Latest deployment report | No (gitignored) |
 | `config.example.json` | Template for new installs | Yes |
 
-Settings: `workspacePath`, `githubOwners`, `defaultEditor`, `autoBackupMessage`, `autoUpdate` (reserved).
+Settings: `workspacePath`, `githubOwners`, `defaultEditor`, `autoBackupMessage`, `autoUpdate` (reserved), `deployments` (optional).
+
+Existing `config.json` files must keep loading. New sections are optional and receive safe defaults when missing.
 
 ---
 
@@ -286,6 +306,7 @@ Each document has a single responsibility.
 | `docs/roadmap.md` | Public | Milestone summary |
 | `docs/faq.md` | Users | Common questions |
 | `docs/architecture.md` | Contributors | High-level structure |
+| `docs/deployments.md` | Users | Deployment Manager guide |
 | `docs/testing.md` | Maintainers | Automated and smoke testing overview |
 | `docs/testing/` | Maintainers | Smoke test process |
 | `CHANGELOG.md` | Public | Release history |

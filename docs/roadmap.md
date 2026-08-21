@@ -39,6 +39,10 @@ Public summary of DevTools milestones. Detailed issue tracking lives in GitHub I
 
 ## v0.5 — Power User Workflows
 
+**In progress:**
+
+- Deployment Manager (`dev deploy`) — audit many GitHub repositories against Vercel, preview missing deployments, onboard them safely, and verify production
+
 **Potential:**
 
 - Favorites
