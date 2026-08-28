@@ -154,6 +154,32 @@ dev self path
 
 ---
 
+## Redundant Backup
+
+A secondary backup remote is optional. Run this section against a real throwaway GitLab or Bitbucket repository — the push itself can't be safely automated in CI.
+
+- [ ] `dev backup status` reports "not configured" and 0 repos when no `backup` section exists yet
+- [ ] `dev backup setup` prompts for provider, namespace/workspace, and connection type, and shows the exact expected repository URL before adding the remote
+- [ ] `dev backup setup` does not push and does not contact any provider API — it only runs `git remote add`/`set-url`
+- [ ] After setup, `git remote -v` shows a `backup` remote with the expected URL
+- [ ] `dev backup status` now reports the repo as configured
+- [ ] `dev backup` pushes the current branch to `origin`, then pushes all branches and tags to `backup`
+- [ ] Repeat `dev backup setup` on an already-configured repo — it shows the current URL and asks before replacing it
+- [ ] Point the `backup` remote at an unreachable path and confirm `dev backup` still reports the GitHub push as successful, with only the secondary marked failed
+- [ ] `dev doctor` shows a "Redundant Backup" section without changing the overall Ready to Build status
+- [ ] No GitLab/Bitbucket token, password, or PAT is ever requested, displayed, or written to `config.json`
+
+**Commands:**
+
+```powershell
+.\dev.cmd backup setup
+.\dev.cmd backup status
+.\dev.cmd backup
+.\dev.cmd doctor
+```
+
+---
+
 ## Open Project
 
 - [ ] Open by number

@@ -16,6 +16,7 @@ On first run, DevTools creates `config.json` from `config.example.json`.
 | `autoBackupMessage` | Default commit message for backup | `Auto backup` |
 | `autoUpdate` | Reserved for future auto-update behavior | `false` |
 | `deployments` | Deployment Manager settings (optional) | see below |
+| `backup` | Secondary backup remote settings (optional) | see below |
 
 ---
 
@@ -74,6 +75,38 @@ $env:VERCEL_TOKEN = "your-token"
 `VERCEL_TEAM_ID` overrides `vercelTeam` when set.
 
 See [deployments.md](deployments.md) for the full guide.
+
+---
+
+## Backup settings
+
+GitHub (`origin`) is always DevTools' primary remote. The `backup` section is optional and lets you configure **one** secondary remote — GitLab or Bitbucket — that `dev backup` pushes to in addition to GitHub. Configuration files written before this shipped keep working: the section is optional and every missing field falls back to a safe default (no secondary remote configured).
+
+```json
+{
+  "backup": {
+    "provider": "",
+    "namespaceOrWorkspace": "",
+    "protocol": "ssh",
+    "remoteName": "backup"
+  }
+}
+```
+
+| Key | Description | Default |
+| --- | --- | --- |
+| `provider` | Secondary provider: `gitlab`, `bitbucket`, or `""` for none | `""` |
+| `namespaceOrWorkspace` | GitLab namespace/group, or Bitbucket workspace slug. Not a secret — just a path segment. | `""` |
+| `protocol` | `ssh` or `https` — which URL DevTools builds when adding the remote | `ssh` |
+| `remoteName` | The git remote name DevTools looks for and pushes to | `backup` |
+
+Run `dev backup setup` to fill this in interactively; run `dev backup status` to see which repositories currently have a `remoteName` remote configured.
+
+### No credentials are ever stored
+
+DevTools never stores a GitLab or Bitbucket token, password, or app password anywhere — not in `config.json`, not in a constructed URL. The `backup` remote's URL lives only in each repository's own `.git/config`, exactly like `origin` does. Authentication for pushes to it relies entirely on whatever you already use for git: an SSH key/agent, or Git Credential Manager for HTTPS.
+
+`dev backup setup` also does not create the destination repository — it only wires the local git remote. Create an empty repository with the same name on GitLab or Bitbucket first; setup shows you the exact URL it expects before adding the remote.
 
 ---
 

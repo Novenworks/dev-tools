@@ -286,6 +286,7 @@ function Show-DoctorCheckResults {
     }
 
     Show-DoctorDeploymentSection
+    Show-DoctorBackupSection
 
     ShowDoctorSystemStatus -Status $status
 }
@@ -313,5 +314,41 @@ function Show-DoctorDeploymentSection {
     Show-DeploymentPrerequisites -State $state
 
     ShowInfo 'Deployment Manager is optional. DevTools is ready without it.'
+    Write-Host ''
+}
+
+function Show-DoctorBackupSection {
+    <#
+    .SYNOPSIS
+        Reports secondary backup remote readiness without affecting overall system status.
+    .DESCRIPTION
+        A secondary backup remote is optional. Users who never run "dev backup
+        setup" stay "Ready to Build" whether or not one is configured.
+    #>
+    if (-not (Get-Command Get-BackupConfig -ErrorAction SilentlyContinue)) {
+        return
+    }
+
+    try {
+        $backupConfig = Get-BackupConfig -ConfigObject $Config
+        $summary = @(Get-WorkspaceBackupSummary -WorkspacePath $Config.workspacePath -RemoteName $backupConfig.RemoteName)
+    }
+    catch {
+        return
+    }
+
+    Write-Host 'Redundant Backup' -ForegroundColor Cyan
+    Write-Host ''
+
+    if ([string]::IsNullOrWhiteSpace($backupConfig.Provider)) {
+        ShowInfo 'Secondary remote: not configured'
+    }
+    else {
+        $configuredCount = @($summary | Where-Object { $_.HasBackup }).Count
+        $providerLabel = Get-BackupProviderDisplayName -Provider $backupConfig.Provider
+        ShowInfo "Secondary remote: $configuredCount/$($summary.Count) repositories configured ($providerLabel)"
+    }
+
+    ShowInfo 'Redundant backup is optional. DevTools is ready without it.'
     Write-Host ''
 }

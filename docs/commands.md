@@ -33,7 +33,9 @@ For a quick overview, see the [README](../README.md).
 | `dev clone` | Clone missing repositories |
 | `dev update` | Pull latest changes |
 | `dev status` | Repository status overview |
-| `dev backup` | Safe backup workflow |
+| `dev backup` | Safe backup workflow (pushes GitHub, plus a secondary remote if configured) |
+| `dev backup setup` | Configure an optional secondary backup remote (GitLab or Bitbucket) |
+| `dev backup status` | Show which repositories have a secondary backup remote configured |
 | `dev deploy` | Deployment Manager (Vercel) |
 | `dev deploy audit` | Compare GitHub repositories against Vercel (read-only) |
 | `dev deploy plan` | Preview exactly what sync would create (read-only) |
@@ -94,6 +96,10 @@ Includes Home, Quick Actions, Recent Projects, Project Info, Doctor, Configure, 
 | `dev update` | Pull latest changes in existing repos |
 | `dev status` | Show repository status across the workspace |
 | `dev backup` | Review changed repos and back up safely |
+| `dev backup setup` | Add or update a secondary backup remote (GitLab or Bitbucket) |
+| `dev backup status` | Which repositories already have a secondary backup remote |
+
+GitHub (`origin`) is always the primary remote. You may optionally configure **one** secondary remote — GitLab or Bitbucket — conventionally named `backup`. `dev backup` pushes to both independently: a failed secondary push never marks a successful GitHub push as failed, and repositories with no `backup` remote behave exactly as before. See [configuration.md](configuration.md#backup-settings) for the config section and setup details.
 
 ---
 
@@ -256,6 +262,8 @@ Project Info is read-only. It does not modify files, install packages, or run de
 ## Safety notes
 
 - Backup asks before committing or pushing
+- Backup's secondary remote push (if configured) is attempted independently of the GitHub push — one failing never marks the other as failed
+- `dev backup setup` never pushes and never contacts GitLab/Bitbucket — it only wires a local git remote. The destination repository must already exist on the provider
 - Deployment `audit`, `plan`, `verify`, and `status` are read-only
 - Deployment `sync` shows the plan and requires confirmation before creating anything
 - Existing healthy Vercel projects are never modified, renamed, redeployed, or disconnected

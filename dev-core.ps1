@@ -17,8 +17,10 @@ $script:DevToolsCommandArgs = @($CommandArgs)
 . (Join-Path $DevToolsRoot 'lib\config.ps1')
 . (Join-Path $DevToolsRoot 'lib\git.ps1')
 . (Join-Path $DevToolsRoot 'lib\github.ps1')
+. (Join-Path $DevToolsRoot 'lib\backup-remotes.ps1')
 . (Join-Path $DevToolsRoot 'lib\doctor.ps1')
 . (Join-Path $DevToolsRoot 'lib\deploy-config.ps1')
+. (Join-Path $DevToolsRoot 'lib\backup-setup.ps1')
 . (Join-Path $DevToolsRoot 'lib\deploy-github.ps1')
 . (Join-Path $DevToolsRoot 'lib\deploy-vercel.ps1')
 . (Join-Path $DevToolsRoot 'lib\deploy-model.ps1')
@@ -73,6 +75,6 @@ if ($commandName -eq 'home' -and -not $script:FirstRun) {
 
 . $commandFile
 
-if ($commandName -notin @('home', 'menu', 'configure', 'settings', 'quick', 'test', 'self', 'deploy')) {
+if ($commandName -notin @('home', 'menu', 'configure', 'settings', 'quick', 'test', 'self', 'deploy', 'backup')) {
     Wait-ForKey
 }
