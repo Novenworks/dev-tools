@@ -185,6 +185,8 @@ $libFiles = @(
     'lib/deploy-vercel.ps1'
     'lib/deploy-model.ps1'
     'lib/deploy-report.ps1'
+    'lib/backup-remotes.ps1'
+    'lib/backup-setup.ps1'
 )
 
 foreach ($libFile in $libFiles) {
@@ -243,6 +245,28 @@ try {
         Write-TestFailure 'config.example.json missing key: deployments'
     }
 
+    if ($configJson.PSObject.Properties.Name -contains 'backup') {
+        Write-TestPass 'config.example.json includes the backup section'
+
+        $backupSubKeys = @('provider', 'namespaceOrWorkspace', 'protocol', 'remoteName')
+        foreach ($backupKey in $backupSubKeys) {
+            if (-not ($configJson.backup.PSObject.Properties.Name -contains $backupKey)) {
+                Write-TestFailure "config.example.json backup section missing key: $backupKey"
+            }
+        }
+
+        $credentialLikeKeys = @($configJson.backup.PSObject.Properties.Name | Where-Object { $_ -match '(?i)token|password|secret' })
+        if ($credentialLikeKeys.Count -gt 0) {
+            Write-TestFailure "config.example.json backup section must never contain a token/password/secret field (found: $($credentialLikeKeys -join ', '))"
+        }
+        else {
+            Write-TestPass 'config.example.json backup section contains no credential fields'
+        }
+    }
+    else {
+        Write-TestFailure 'config.example.json missing key: backup'
+    }
+
     if (-not $failed) {
         $configValid = $true
         Write-TestPass 'config.example.json is valid JSON with required keys'
@@ -271,6 +295,25 @@ if ($secretFindings.Count -eq 0) {
 }
 else {
     Write-TestFailure "Possible committed Vercel token in: $($secretFindings -join ', ')"
+}
+
+# No committed file may contain a GitLab or Bitbucket token/app password —
+# redundant backup must never store secondary-host credentials.
+$backupSecretFindings = @()
+foreach ($trackedFile in $trackedTextFiles) {
+    $trackedContent = Get-Content -LiteralPath $trackedFile.FullName -Raw -ErrorAction SilentlyContinue
+    if (-not $trackedContent) { continue }
+
+    if ($trackedContent -match '(?i)(gitlab|bitbucket)[_-]?(token|password|app[_-]?password|pat)\s*[:=]\s*[''"][A-Za-z0-9_\-]{8,}[''"]') {
+        $backupSecretFindings += $trackedFile.FullName
+    }
+}
+
+if ($backupSecretFindings.Count -eq 0) {
+    Write-TestPass 'No GitLab/Bitbucket token literals are committed'
+}
+else {
+    Write-TestFailure "Possible committed GitLab/Bitbucket credential in: $($backupSecretFindings -join ', ')"
 }
 
 $gitignoreePath = Join-Path $ProjectRoot '.gitignore'
@@ -384,6 +427,30 @@ if (Test-Path -LiteralPath $deployTestScript) {
 }
 else {
     Write-TestFailure 'Deployment Manager tests missing: tests/Test-Deploy.ps1'
+}
+
+# Redundant backup tests run in a child process, same as Deployment Manager,
+# so their throwaway git repos and process cwd changes stay isolated.
+$backupTestScript = Join-Path $ProjectRoot 'tests\Test-Backup.ps1'
+
+if (Test-Path -LiteralPath $backupTestScript) {
+    $backupRunner = 'powershell.exe'
+    $pwshCommand = Get-Command pwsh -ErrorAction SilentlyContinue
+    if ($pwshCommand) { $backupRunner = $pwshCommand.Source }
+
+    Write-Host ''
+    & $backupRunner -NoProfile -ExecutionPolicy Bypass -File $backupTestScript
+    $backupExitCode = $LASTEXITCODE
+
+    if ($backupExitCode -eq 0) {
+        Write-TestPass 'Backup tests passed'
+    }
+    else {
+        Write-TestFailure "Backup tests failed (exit code $backupExitCode)"
+    }
+}
+else {
+    Write-TestFailure 'Backup tests missing: tests/Test-Backup.ps1'
 }
 
 # Optional development tools (does not affect pass/fail)

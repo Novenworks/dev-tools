@@ -20,5 +20,11 @@
     "deploymentTimeoutSeconds": 600,
     "pollIntervalSeconds": 10,
     "maxRepositoriesPerOwner": 1000
+  },
+  "backup": {
+    "provider": "",
+    "namespaceOrWorkspace": "",
+    "protocol": "ssh",
+    "remoteName": "backup"
   }
 }

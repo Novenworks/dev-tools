@@ -42,6 +42,7 @@ VERSION                    Single source for version string
 - Backup never commits or pushes without confirmation.
 - User config stays local and gitignored.
 - Deployment `audit`, `plan`, `verify`, and `status` are read-only. Only `sync` mutates, and only after confirmation.
+- Redundant backup pushes to a literal `backup` git remote only. DevTools never stores a second host's credentials, and `dev backup setup` never creates the destination repository or contacts a provider API — the repo must already exist.
 - Credentials come from the environment, never from tracked files.
 
 ---
