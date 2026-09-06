@@ -6,7 +6,7 @@ DevTools uses GitHub milestones to group related work. Create these milestones m
 
 ## v0.4.0 — Developer Command Center
 
-**Status:** Current release.
+**Status:** Shipped.
 
 **Shipped:**
 
@@ -18,33 +18,40 @@ DevTools uses GitHub milestones to group related work. Create these milestones m
 
 ---
 
-## v0.4.x — Stabilization
+## v0.5.0 — Repository Intelligence
 
-**Purpose:** Polish and reliability after v0.4.0.
+**Status:** Current release.
+
+**Shipped:**
+
+- Shared repository state model (`lib/repo-*.ps1`)
+- `dev sync` with fast-forward-only bulk updates, and `dev update` as an alias
+- Repository Health (`dev status`) with attention filters
+- Detailed repository classifications and recommended actions
+- Guided upstream repair and safe merged-branch cleanup
+- Repository maintenance menu (`dev repos`) and single-repository actions
+- Diagnostic report export
+- Behavioral repository tests with local Git fixtures
+
+---
+
+## v0.5.x — Stabilization
+
+**Purpose:** Polish and reliability after v0.5.0.
 
 **Issues:**
 
 - Add README screenshots
 - Test clean Windows install flow
 - Installer polish
-- Improve progress indicators
+- Validate sync performance against a ~300-repository workspace
 - Onboarding edge-case fixes
-
----
-
-## v0.5 — Power User Workflows
-
-**Purpose:** Help users manage larger workspaces and repeatable project workflows.
-
-**Issues:**
-
 - Add favorite projects
 - Add project profiles
 - Add workspace profiles
 - Add project launch workflows
 - Self-update improvements
 - Guided publish workflow
-- Explore plugin system
 
 ---
 

@@ -15,7 +15,7 @@ Built by Novenworks.
 
 DevTools is a beginner-friendly Windows PowerShell utility for managing multiple local GitHub projects from one menu.
 
-It helps you set up your workspace, clone repositories, check your development environment, update projects, open project folders, and safely back up changes.
+It helps you set up your workspace, clone repositories, check your development environment, keep hundreds of repositories healthy and safely synchronized, open project folders, and back up changes.
 
 It was built for developers, freelancers, students, and builders who work across multiple repositories and want less friction in their daily workflow.
 
@@ -32,7 +32,7 @@ Recommended screenshots:
 - Home Dashboard
 - Doctor
 - Configure Wizard
-- Repository Status
+- Repository Health
 - Open Project
 - Settings
 
@@ -44,11 +44,15 @@ Recommended screenshots:
 - **Home dashboard** — System Status, collapsed checklist, and recent projects when available
 - **Development environment check** — Doctor finds missing tools and guides fixes
 - **GitHub repository cloning** — Download repositories from your GitHub owners
-- **Multi-repository updates** — Pull the latest changes across your workspace
-- **Repository status overview** — Review clean, modified, ahead, behind, and conflict states
+- **Smart repository sync** — Refresh GitHub state and fast-forward only the repositories that are safe to update
+- **Repository health** — See exactly which repositories need attention across hundreds of projects, with filters
+- **Actionable classifications** — Local changes, ahead, diverged, missing upstream, detached HEAD, conflicts, and remote failures instead of "could not update"
+- **Guided upstream repair** — Recover branches whose remote branch was deleted after a merged pull request
+- **Safe branch cleanup** — Delete stale local branches only when Git can prove they are fully merged
+- **Diagnostic reports** — Export repository health as JSON and as pasteable Markdown
 - **Safe backup workflow** — Review changes and confirm before committing or pushing
 - **Project launcher** — Open a project in your preferred editor
-- **Quick Actions** — Fast path for update, open, status, and clone
+- **Quick Actions** — Fast path for sync, open, health, and clone
 - **Recent Projects** — Jump back into projects you open most often
 - **Project Info** — Inspect Git status, stack, and quick actions
 - **Project search** — Find projects by partial name in large workspaces
@@ -211,8 +215,10 @@ If DevTools is on your PATH after running `install.ps1`, you can use `dev` inste
 | `settings` | Change preferences one at a time | `dev settings` |
 | `doctor` | Check your development environment | `dev doctor` |
 | `clone` | Download missing GitHub repositories | `dev clone` |
-| `update` | Pull latest changes in existing repos | `dev update` |
-| `status` | Show repository status across the workspace | `dev status` |
+| `sync` | Refresh GitHub state and safely fast-forward repositories | `dev sync` |
+| `update` | Alias for `sync`, kept for existing scripts | `dev update` |
+| `status` | Repository health across the workspace | `dev status` |
+| `repos` | Repository maintenance: sync, health, repair, cleanup, reports | `dev repos` |
 | `backup` | Review changed repos and back up safely | `dev backup` |
 | `open` | Open a project in your default editor | `dev open` or `dev open walkreplay` |
 | `recent` | Open a recently used project | `dev recent` |
@@ -223,6 +229,28 @@ If DevTools is on your PATH after running `install.ps1`, you can use `dev` inste
 | `deploy` | Deployment Manager for Vercel (optional) | `dev deploy audit` |
 
 **Backup safety:** Backup shows repositories with changes and asks for confirmation before committing or pushing. Nothing is committed or pushed without your approval.
+
+### Repository Intelligence
+
+`dev sync` fetches, classifies, and then updates only what is safe:
+
+```text
+* Updated: MyProject (4 commits)
+. Current: AnotherProject
+! Skipped: OldDemo - local changes
+! Skipped: AgentBranch - origin/claude/rebuild-homepage no longer exists
+```
+
+Bulk sync is **fast-forward only**. DevTools never stashes, resets, force-pulls, merges diverged
+histories, commits, pushes, or deletes unmerged branches on your behalf. When it is not certain a
+repository is safe to update, it skips it and explains why.
+
+`dev status` opens Repository Health, which answers "what in my workspace needs attention?" and lets
+you filter to just the modified, behind, ahead, diverged, broken-upstream, or blocked repositories
+instead of scrolling past hundreds of clean ones.
+
+`dev repos` adds guided upstream repair, safe merged-branch cleanup, single-repository actions, and
+diagnostic report export. See [docs/commands.md](docs/commands.md#repository-intelligence).
 
 ### Deployment Manager
 
@@ -254,9 +282,10 @@ Quick Actions are for the tasks you run most often:
 
 - Open a recent project
 - Search and open a project
-- View repository status
-- Update repositories
+- View repository health
+- Sync repositories
 - Clone missing repositories
+- Open Repository Maintenance
 
 Launch from Home (when ready), the Main Menu, or directly:
 
@@ -380,7 +409,11 @@ Example:
 - DevTools does **not** delete repositories
 - **Backup** asks before committing or pushing
 - **Clone** skips folders that already exist
-- **Update** runs `git pull` inside existing repositories
+- **Sync is fast-forward only** — no stash, no reset, no force, no merge of diverged histories, no automatic commit or push
+- **Unsafe repositories are skipped and explained**, never modified
+- **Branch cleanup never force-deletes** and never removes a branch Git cannot prove is merged
+- **Upstream repair never deletes a branch** and refuses to switch when unmerged commits exist
+- **Repository reports are sanitized** — credentials embedded in remote URLs are stripped before anything is written to disk
 - `config.json` is local and ignored by Git
 - **Deployment audit, plan, verify, and status change nothing** — only `dev deploy sync` can create Vercel projects, and it always asks first
 - Healthy Vercel projects are never modified, renamed, redeployed, or disconnected
@@ -395,9 +428,9 @@ DevTools uses GitHub Issues, labels, and milestones to track future work.
 
 **Current planned milestones:**
 
-- **v0.4.0** — Developer Command Center (current release)
-- **v0.4.x** — Stabilization
-- **v0.5** — Power User Workflows
+- **v0.4.0** — Developer Command Center
+- **v0.5.0** — Repository Intelligence (current release)
+- **v0.5.x** — Stabilization
 - **v1.0** — Stable Public Release
 
 See [docs/roadmap.md](docs/roadmap.md) for details.
@@ -536,7 +569,7 @@ $env:DEVTOOLS_ASCII = '1'
 ## FAQ
 
 **What does DevTools do?**  
-DevTools helps you manage a local GitHub workspace from one menu — setup, cloning, updates, status, backup, and opening projects.
+DevTools helps you manage a local GitHub workspace from one menu — setup, cloning, safe repository sync, repository health, backup, and opening projects.
 
 **Is this only for Novenworks?**  
 No. DevTools is open source. You configure your own workspace path and GitHub owners.
@@ -576,4 +609,4 @@ Suggested GitHub topics:
 
 See [CHANGELOG.md](CHANGELOG.md) for full release history.
 
-**v0.4.0 — Developer Command Center** adds global install, `dev test`, `dev self`, Recent Projects, Project Info, Quick Actions, automated validation, GitHub Actions CI, and an improved installation flow.
+**v0.5.0 — Repository Intelligence** adds smart repository sync, Repository Health with filters, guided upstream repair, safe merged-branch cleanup, single-repository actions, and diagnostic report export — all built on one shared repository state model.

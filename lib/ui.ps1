@@ -75,7 +75,9 @@ function Get-DevToolsDisplaySymbol {
             'check-pass',
             'check-fail',
             'check-optional',
-            'success-mark'
+            'success-mark',
+            'item-current',
+            'item-attention'
         )]
         [string]$Name
     )
@@ -88,6 +90,8 @@ function Get-DevToolsDisplaySymbol {
         'check-fail' { return 'x' }
         'check-optional' { return 'o' }
         'success-mark' { return '*' }
+        'item-current' { return '.' }
+        'item-attention' { return '!' }
     }
 
     if (-not (Test-DevToolsUnicodeSupported)) {
@@ -103,6 +107,8 @@ function Get-DevToolsDisplaySymbol {
             'check-fail' { [char]::ConvertFromUtf32(0x2717) }
             'check-optional' { [char]::ConvertFromUtf32(0x25CB) }
             'success-mark' { [char]::ConvertFromUtf32(0x2713) }
+            'item-current' { [char]::ConvertFromUtf32(0x00B7) }
+            'item-attention' { '!' }
         }
 
         if (-not [string]::IsNullOrEmpty($unicode)) {
@@ -352,13 +358,14 @@ function ShowMainMenuOptions {
     Write-Host '  6  Configure'
     Write-Host '  7  Settings'
     Write-Host '  8  Clone missing repositories'
-    Write-Host '  9  Update repositories'
-    Write-Host '  10 Repository status'
-    Write-Host '  11 Backup changed repositories'
-    Write-Host '  12 Open project'
-    Write-Host '  13 Deployment Manager'
-    Write-Host '  14 Help'
-    Write-Host '  15 Exit'
+    Write-Host '  9  Sync repositories'
+    Write-Host '  10 Repository health'
+    Write-Host '  11 Repository maintenance'
+    Write-Host '  12 Backup changed repositories'
+    Write-Host '  13 Open project'
+    Write-Host '  14 Deployment Manager'
+    Write-Host '  15 Help'
+    Write-Host '  16 Exit'
     Write-Host ''
     Write-Host 'Type a number and press Enter.' -ForegroundColor DarkGray
     Write-Host ''

@@ -218,7 +218,8 @@ function Invoke-ProjectInfoActions {
         Write-Host '  2  Open in Explorer'
         Write-Host '  3  Open GitHub Repository'
         Write-Host '  4  Repository Status'
-        Write-Host '  5  Back'
+        Write-Host '  5  Repository Actions'
+        Write-Host '  6  Back'
         Write-Host ''
 
         $choice = Read-Host 'Choose an option'
@@ -251,13 +252,20 @@ function Invoke-ProjectInfoActions {
                 }
 
                 $details = Get-RepoStatusDetails -RepoPath $Project.FullName
-                Write-Host ''
-                Write-Host 'Repository Status' -ForegroundColor Cyan
-                Write-Host "  Branch: $($details.Branch)" -ForegroundColor DarkGray
-                Write-Host "  Status: $($details.DisplayStatus)" -ForegroundColor DarkGray
+                Show-RepositoryAttentionDetail -State $details.State -IncludeGitError
                 Wait-ForKey -Message 'Press Enter to continue'
             }
-            '5' { return }
+            '5' {
+                if (-not $GitInfo.IsGit) {
+                    ShowInfo 'This folder is not a Git repository.'
+                    Wait-ForKey -Message 'Press Enter to continue'
+                    continue
+                }
+
+                Invoke-RepositoryActionsMenu -Project $Project
+                return
+            }
+            '6' { return }
             default {
                 ShowWarning 'Please choose a number from the menu.'
                 Wait-ForKey -Message 'Press Enter to try again'

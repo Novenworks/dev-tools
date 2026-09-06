@@ -16,6 +16,11 @@ $script:DevToolsCommandArgs = @($CommandArgs)
 . (Join-Path $DevToolsRoot 'lib\ui.ps1')
 . (Join-Path $DevToolsRoot 'lib\config.ps1')
 . (Join-Path $DevToolsRoot 'lib\git.ps1')
+. (Join-Path $DevToolsRoot 'lib\repo-git.ps1')
+. (Join-Path $DevToolsRoot 'lib\repo-state.ps1')
+. (Join-Path $DevToolsRoot 'lib\repo-sync.ps1')
+. (Join-Path $DevToolsRoot 'lib\repo-repair.ps1')
+. (Join-Path $DevToolsRoot 'lib\repo-report.ps1')
 . (Join-Path $DevToolsRoot 'lib\github.ps1')
 . (Join-Path $DevToolsRoot 'lib\doctor.ps1')
 . (Join-Path $DevToolsRoot 'lib\deploy-config.ps1')
@@ -28,6 +33,7 @@ $script:DevToolsCommandArgs = @($CommandArgs)
 . (Join-Path $DevToolsRoot 'lib\projects.ps1')
 . (Join-Path $DevToolsRoot 'lib\recent.ps1')
 . (Join-Path $DevToolsRoot 'lib\project-info.ps1')
+. (Join-Path $DevToolsRoot 'lib\repo-ui.ps1')
 . (Join-Path $DevToolsRoot 'lib\test.ps1')
 . (Join-Path $DevToolsRoot 'lib\self.ps1')
 
@@ -62,7 +68,7 @@ $commandFile = Join-Path $DevToolsRoot "commands\$commandName.ps1"
 
 if (-not (Test-Path $commandFile)) {
     ShowError "Unknown command: $Command"
-    ShowInfo 'Valid commands: home, menu, quick, recent, info, test, self, configure, settings, doctor, clone, update, status, backup, open, deploy, help'
+    ShowInfo 'Valid commands: home, menu, quick, recent, info, repos, test, self, configure, settings, doctor, clone, sync, update, status, backup, open, deploy, help'
     exit 1
 }
 
@@ -73,6 +79,6 @@ if ($commandName -eq 'home' -and -not $script:FirstRun) {
 
 . $commandFile
 
-if ($commandName -notin @('home', 'menu', 'configure', 'settings', 'quick', 'test', 'self', 'deploy')) {
+if ($commandName -notin @('home', 'menu', 'configure', 'settings', 'quick', 'test', 'self', 'deploy', 'status', 'repos')) {
     Wait-ForKey
 }
