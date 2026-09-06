@@ -1,4 +1,4 @@
-# Repository intelligence — Git invocation and raw fact acquisition.
+# Repository intelligence - Git invocation and raw fact acquisition.
 #
 # This module is the only place that runs Git for repository state. It returns
 # raw facts. It never classifies, never renders UI, and never mutates history.

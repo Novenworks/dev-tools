@@ -1,4 +1,4 @@
-# Repository intelligence — diagnostic report generation.
+# Repository intelligence - diagnostic report generation.
 #
 # Reports are written to the gitignored reports/repositories folder.
 # Remote URLs are sanitized so credentials and tokens are never written to disk.

@@ -423,7 +423,7 @@ try {
     Assert-Equal $summary.Total $partition 'Every repository is counted exactly once in the sync summary'
 
     # -----------------------------------------------------------------------
-    # 15. Upstream repair — safe case
+    # 15. Upstream repair - safe case
     # -----------------------------------------------------------------------
     $safeRepair = New-FixtureRepository -Name 'repo-repair-safe'
     Invoke-FixtureGit -RepoPath $safeRepair.Path -GitArgs @('checkout', '--quiet', '-b', 'claude/merged-work') | Out-Null
@@ -445,7 +445,7 @@ try {
     Assert-True (Test-RepositoryRefExists -RepoPath $safeRepair.Path -Ref 'refs/heads/claude/merged-work') 'Repair never deletes the old branch'
 
     # -----------------------------------------------------------------------
-    # 16. Upstream repair — unsafe case (unmerged local commits)
+    # 16. Upstream repair - unsafe case (unmerged local commits)
     # -----------------------------------------------------------------------
     $unsafeRepair = New-FixtureRepository -Name 'repo-repair-unsafe'
     Invoke-FixtureGit -RepoPath $unsafeRepair.Path -GitArgs @('checkout', '--quiet', '-b', 'claude/unmerged-work') | Out-Null
@@ -476,7 +476,7 @@ try {
     Assert-True (($dirtyPlan.Blockers -join ' ') -match 'uncommitted changes') 'The dirty blocker is explained'
 
     # -----------------------------------------------------------------------
-    # 17. Branch cleanup — deletes merged, refuses unmerged
+    # 17. Branch cleanup - deletes merged, refuses unmerged
     # -----------------------------------------------------------------------
     $cleanup = New-FixtureRepository -Name 'repo-cleanup'
     Invoke-FixtureGit -RepoPath $cleanup.Path -GitArgs @('branch', 'claude/merged-feature') | Out-Null
@@ -752,7 +752,7 @@ finally {
                 ForEach-Object { if ($_.Attributes -band [System.IO.FileAttributes]::ReadOnly) { $_.Attributes = 'Normal' } }
         }
         catch {
-            # Best effort only.
+            Write-Verbose "Could not clear read-only attributes: $($_.Exception.Message)"
         }
 
         Remove-Item -LiteralPath $script:TestRoot -Recurse -Force -ErrorAction SilentlyContinue

@@ -1,4 +1,4 @@
-# Repository intelligence — guided upstream repair and safe merged-branch cleanup.
+# Repository intelligence - guided upstream repair and safe merged-branch cleanup.
 #
 # Safety contract: DevTools never force-deletes a branch, never deletes an
 # unmerged branch, and never switches branches when local work could be lost.

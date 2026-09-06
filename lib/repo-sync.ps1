@@ -1,4 +1,4 @@
-# Repository intelligence — workspace collection and the safe synchronization engine.
+# Repository intelligence - workspace collection and the safe synchronization engine.
 #
 # Safety contract for everything in this file:
 #   no stash, no reset, no clean, no force, no commit, no push,

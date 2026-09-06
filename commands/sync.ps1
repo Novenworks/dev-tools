@@ -1,4 +1,4 @@
-# Sync Repositories — fetch, classify, and safely fast-forward.
+# Sync Repositories - fetch, classify, and safely fast-forward.
 # `dev update` routes here so existing scripts keep working.
 
 ShowCommandScreen -Heading 'Sync Repositories' -Description @(

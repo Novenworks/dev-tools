@@ -1,4 +1,4 @@
-# Repository intelligence — terminal rendering and interactive flows.
+# Repository intelligence - terminal rendering and interactive flows.
 #
 # All Git access happens through repo-git / repo-sync / repo-repair.
 # This module only formats results and drives menus.

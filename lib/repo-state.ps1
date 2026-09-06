@@ -1,4 +1,4 @@
-# Repository intelligence — pure state classification.
+# Repository intelligence - pure state classification.
 #
 # Every function here is pure: facts in, classification out. No Git calls, no UI.
 # This is what makes repository health testable without touching real repositories.
