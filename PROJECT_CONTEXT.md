@@ -1,6 +1,6 @@
 # DevTools — Project Context
 
-**Version:** v0.4.0 (see `VERSION`)  
+**Version:** v0.5.0 (see `VERSION`)  
 **Status:** Active Development  
 **Repository:** https://github.com/Novenworks/dev-tools  
 **Product:** DevTools  
@@ -98,11 +98,18 @@ At the time of writing, DevTools includes:
 - DevTools-native GitHub sign-in messaging on Home (no raw `gh auth status` on Home)
 - Display symbols with emoji or ASCII fallback (`Get-DevToolsDisplaySymbol`)
 
-**Repository workflows**
+**Repository workflows (Repository Intelligence, v0.5.0)**
 
 - Clone missing GitHub repositories (`gh`, no GitHub API in DevTools)
-- Multi-repository update (`git pull`)
-- Repository status (clean, modified, ahead, behind, conflicts)
+- One shared repository state model: facts (`repo-git.ps1`) -> pure classification (`repo-state.ps1`) -> everything else
+- `dev sync` — fetch/prune, classify, and fast-forward only provably safe repositories; `dev update` is an alias
+- Repository Health (`dev status`) — counts plus filters for attention, modified, behind, ahead, diverged, broken upstreams, and blocked repositories
+- Detailed classifications with explanation, local-work reassurance, and recommended action
+- Guided upstream repair for deleted remote branches (the AI agent branch case)
+- Safe merged-branch cleanup (`git branch -d` only, never `-D`, never unmerged)
+- Repository Maintenance menu (`dev repos`) and single-repository actions
+- Diagnostic reports in the gitignored `reports/repositories/` folder
+- Compact progress feedback at ~300-repository scale
 - Safe backup (always confirms before commit/push)
 
 **Projects**
@@ -123,6 +130,7 @@ At the time of writing, DevTools includes:
 
 - Manual smoke test checklist (`docs/testing/smoke-test.md`)
 - Automated validation (`tests/Test-DevTools.ps1`, GitHub Actions CI)
+- Behavioral repository tests (`tests/Test-Repos.ps1`) using throwaway Git fixtures and local bare remotes
 - `dev test` — run validation from any directory
 - `dev self` — test, inspect, update, and manage PATH for DevTools itself
 - Global install via `install.ps1` or `dev self install` (User PATH only)
@@ -132,7 +140,9 @@ DevTools dogfoods itself through `dev self` and `dev test`.
 
 **Commands (entry point: `dev` / `dev.cmd`)**
 
-`home`, `menu`, `quick`, `recent`, `info`, `test`, `self`, `configure`, `settings`, `doctor`, `clone`, `update`, `status`, `backup`, `open`, `deploy`, `help`
+`home`, `menu`, `quick`, `recent`, `info`, `repos`, `test`, `self`, `configure`, `settings`, `doctor`, `clone`, `sync`, `update`, `status`, `backup`, `open`, `deploy`, `help`
+
+`dev update` is preserved as an alias for `dev sync`. Do not break it.
 
 `dev self install` adds the installation folder to the **User** PATH only (no admin, no Machine PATH).
 
@@ -160,18 +170,21 @@ Maintain a focused scope.
 
 ## Current Milestone
 
-**v0.4.0 — Developer Command Center**
+**v0.5.0 — Repository Intelligence**
 
 Shipped in this release:
 
-- Global install and global `dev` command
-- Recent Projects, Project Info, Quick Actions
-- `dev test` and `dev self`
-- Automated validation and GitHub Actions CI
-- Smoke testing documentation
-- Improved installation flow and launcher architecture
+- Shared repository state model across status, sync, Project Info, repair, and reporting
+- `dev sync` with fast-forward-only bulk updates (`dev update` preserved)
+- Repository Health with workspace counts and filters
+- Actionable classifications replacing "Could not update"
+- Guided upstream repair and safe merged-branch cleanup
+- Repository Maintenance menu and single-repository actions
+- Diagnostic report export
+- Deployment Manager (previously unreleased) ships here too
+- Behavioral repository test suite
 
-**Next focus (v0.4.x — Stabilization):** See [`.github/milestones.md`](.github/milestones.md) and [`.github/ISSUES_TO_CREATE.md`](.github/ISSUES_TO_CREATE.md).
+**Next focus (v0.5.x — Stabilization):** See [`.github/milestones.md`](.github/milestones.md) and [`.github/ISSUES_TO_CREATE.md`](.github/ISSUES_TO_CREATE.md).
 
 ---
 
@@ -185,36 +198,28 @@ Roadmap detail lives in GitHub Issues, labels, and milestones. See:
 
 ### v0.4.0 — Developer Command Center
 
+**Status:** Shipped.
+
+### v0.5.0 — Repository Intelligence
+
 **Status:** Current release.
 
-**Completed:**
+Repository state model, safe sync, health, repair, cleanup, reporting, Deployment Manager.
 
-- Global install
-- Recent Projects
-- Project Info
-- Quick Actions
-- `dev test`
-- `dev self`
-- Automated validation
-- Documentation structure
+### v0.5.x — Stabilization
 
-### v0.4.x — Stabilization
-
-**Focus:** Polish, screenshots, installer edge cases, clean install validation.
+**Focus:** Polish, screenshots, installer edge cases, clean install validation, and real-world
+validation against very large workspaces.
 
 **Remaining:**
 
 - README screenshots
 - Clean Windows install test
 - Installer polish
-- Progress indicators
+- Sync performance validation at ~300 repositories
 - Edge-case fixes
 
-### v0.5 — Power User Workflows
-
-**Focus:** Scale to larger development environments.
-
-Potential work: favorites, project profiles, workspace profiles, project launch workflows, self-update improvements, guided publish workflow, plugin exploration.
+Potential work: favorites, project profiles, workspace profiles, project launch workflows, self-update improvements, guided publish workflow.
 
 ### v1.0 — Stable Public Release
 
@@ -248,7 +253,13 @@ VERSION                    Single source for version string
 | `copy.ps1` | Product mission, status labels, Doctor copy catalog |
 | `ui.ps1` | Screens, headers, menus, display symbols (emoji/ASCII), formatting |
 | `config.ps1` | Load/save `config.json`, first-run setup |
-| `git.ps1` | Repository status, pull, workspace repo discovery |
+| `git.ps1` | Workspace repo discovery, Git availability, backward-compatible status projection |
+| `repo-git.ps1` | Git result model, porcelain v2 parsing, fetch/prune, raw repository facts |
+| `repo-state.ps1` | Pure classification, safe-update policy, filters, summaries (no Git, no UI) |
+| `repo-sync.ps1` | Workspace state collection and the fast-forward-only sync engine |
+| `repo-repair.ps1` | Upstream repair safety rules, merged-branch cleanup |
+| `repo-report.ps1` | Repository diagnostic reports (JSON + Markdown-style text), sanitization |
+| `repo-ui.ps1` | Repository Health, Sync, maintenance menus, repair/cleanup/actions flows |
 | `github.ps1` | GitHub CLI helpers, auth check, repo listing |
 | `doctor.ps1` | Environment checks, system status, interactive fixes |
 | `home.ps1` | Home dashboard, adaptive actions, GitHub sign-in flow |
@@ -272,6 +283,10 @@ VERSION                    Single source for version string
 - Keep modules focused.
 - Do not use the GitHub REST API directly — use GitHub CLI (`gh`), including `gh api`, where needed.
 - Deployment discovery and reporting must stay read-only. Only `dev deploy sync` mutates, and only after explicit confirmation.
+- Repository state has one source of truth. Do not add parallel Git status parsing to commands.
+- Keep the layers separate: acquisition -> classification -> recommended action -> rendering -> mutation. Classification stays pure and testable without Git.
+- Prefer Git plumbing (`rev-parse`, `status --porcelain=v2`, `for-each-ref`, `symbolic-ref`, `rev-list`) over parsing localized Git prose.
+- DevTools must never automatically run `reset`, `clean`, `stash`, any force operation, conflict resolution, merges or rebases of diverged history, commits, pushes, branch switches that risk local work, or deletion of unmerged branches. When uncertain: skip and explain.
 - Never store credentials in tracked files. Deployment credentials come from the environment.
 - Do not build a provider plugin framework. Vercel is the supported provider today.
 - Do not rewrite `dev-core.ps1` into a monolith.
@@ -284,6 +299,8 @@ VERSION                    Single source for version string
 | `config.json` | User settings | No (gitignored) |
 | `config/recent-projects.json` | Recent project history | No (gitignored) |
 | `reports/deployments/latest.json` | Latest deployment report | No (gitignored) |
+| `reports/repositories/latest.json` | Latest repository diagnostic report | No (gitignored) |
+| `reports/repositories/latest.txt` | Pasteable repository diagnostic report | No (gitignored) |
 | `config.example.json` | Template for new installs | Yes |
 
 Settings: `workspacePath`, `githubOwners`, `defaultEditor`, `autoBackupMessage`, `autoUpdate` (reserved), `deployments` (optional).
@@ -308,6 +325,7 @@ Each document has a single responsibility.
 | `docs/architecture.md` | Contributors | High-level structure |
 | `docs/deployments.md` | Users | Deployment Manager guide |
 | `docs/testing.md` | Maintainers | Automated and smoke testing overview |
+| `docs/commands.md` (Repository Intelligence) | Users | Sync, health, repair, cleanup, reports |
 | `docs/testing/` | Maintainers | Smoke test process |
 | `CHANGELOG.md` | Public | Release history |
 | `CONTRIBUTING.md` | Contributors | How to contribute |
@@ -368,13 +386,14 @@ If not, add a GitHub Issue to the backlog instead of expanding the current miles
 
 **Highest**
 
-- v0.4.x stabilization: README screenshots, clean install validation, installer polish
+- v0.5.x stabilization: validate sync against a real ~300-repository workspace, README screenshots, clean install validation
 - Documentation sync with shipped features
 - Keep CI green
 
 **Medium**
 
-- v0.5 planning: favorites, project profiles, workspace profiles, launch workflows
+- Sync performance tuning if fetch-per-repository proves too slow at scale
+- Favorites, project profiles, workspace profiles, launch workflows
 - Polish Recent Projects, Project Info, and Quick Actions based on feedback
 
 **Lower**
@@ -419,6 +438,12 @@ Significant decisions (append new entries; do not delete history).
 | — | **Display symbols with ASCII fallback** | `Get-DevToolsDisplaySymbol` avoids Unicode rendering errors on legacy consoles. |
 | — | **Home accepts empty attention items** | `[AllowEmptyCollection()]` plus ready-state copy when all required checks pass. |
 | — | **User PATH via `dev self install`** | Safe global `dev` access; User PATH only; conflict detection before install. |
+| — | **Repository health uses one shared state model consumed by status, sync, repair, and reporting** | Removes duplicated Git parsing across commands and keeps every screen consistent. |
+| — | **Bulk repository sync is conservative and fast-forward-only. Unsafe repository states are classified and reported rather than automatically modified** | Losing local work is worse than an out-of-date repository. When uncertain, skip and explain. |
+| — | **Git plumbing over Git prose** | `status --porcelain=v2 --branch` is stable and locale-independent; parsing human-readable output is fragile. |
+| — | **`dev sync` added, `dev update` kept as an alias** | Sync is the honest name for the workflow; breaking existing scripts is not acceptable. |
+| — | **Repository reports live in gitignored `reports/repositories/`** | Matches the deployment report convention; remote URLs are sanitized so credentials never reach disk. |
+| — | **Branch deletion requires proof of merge** | `git branch -d` only, never `-D`; stale is not the same as safe. |
 
 ---
 

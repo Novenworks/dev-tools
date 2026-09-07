@@ -29,13 +29,14 @@ while ($true) {
         }
         '7' { Invoke-DevToolsMenuAction { . (Join-Path $DevToolsRoot 'commands\settings.ps1') } }
         '8' { Invoke-DevToolsMenuAction { . (Join-Path $DevToolsRoot 'commands\clone.ps1') } }
-        '9' { Invoke-DevToolsMenuAction { . (Join-Path $DevToolsRoot 'commands\update.ps1') } }
-        '10' { Invoke-DevToolsMenuAction { . (Join-Path $DevToolsRoot 'commands\status.ps1') } }
-        '11' { Invoke-DevToolsMenuAction { . (Join-Path $DevToolsRoot 'commands\backup.ps1') } }
-        '12' { Invoke-DevToolsMenuAction { . (Join-Path $DevToolsRoot 'commands\open.ps1') } }
-        '13' { Invoke-DeploymentManagerMenu -ConfigObject $Config | Out-Null }
-        '14' { Invoke-DevToolsMenuAction { . (Join-Path $DevToolsRoot 'commands\help.ps1') } }
-        '15' { exit 0 }
+        '9' { Invoke-DevToolsMenuAction { . (Join-Path $DevToolsRoot 'commands\sync.ps1') } }
+        '10' { Invoke-RepositoryHealthFlow }
+        '11' { Invoke-RepositoryMaintenanceMenu }
+        '12' { Invoke-DevToolsMenuAction { . (Join-Path $DevToolsRoot 'commands\backup.ps1') } }
+        '13' { Invoke-DevToolsMenuAction { . (Join-Path $DevToolsRoot 'commands\open.ps1') } }
+        '14' { Invoke-DeploymentManagerMenu -ConfigObject $Config | Out-Null }
+        '15' { Invoke-DevToolsMenuAction { . (Join-Path $DevToolsRoot 'commands\help.ps1') } }
+        '16' { exit 0 }
         default {
             ShowError 'That option is not available. Please choose a number from the menu.'
             Wait-ForKey

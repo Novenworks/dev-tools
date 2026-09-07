@@ -6,7 +6,7 @@ Public summary of DevTools milestones. Detailed issue tracking lives in GitHub I
 
 ## v0.4.0 — Developer Command Center
 
-**Status:** Current release.
+**Status:** Shipped.
 
 **Completed:**
 
@@ -23,7 +23,27 @@ Public summary of DevTools milestones. Detailed issue tracking lives in GitHub I
 
 ---
 
-## v0.4.x — Stabilization
+## v0.5.0 — Repository Intelligence
+
+**Status:** Current release.
+
+**Completed:**
+
+- One shared repository state model behind status, sync, repair, and reporting
+- `dev sync` — fetch, classify, and fast-forward only what is safe (`dev update` still works)
+- Repository Health (`dev status`) with counts and filters for large workspaces
+- Detailed classifications replacing "Could not update"
+- Guided upstream repair for deleted remote branches
+- Safe merged-branch cleanup
+- Repository maintenance menu (`dev repos`) and single-repository actions
+- Diagnostic report export (`reports/repositories/`)
+- Progress feedback at ~300-repository scale
+- Deployment Manager (`dev deploy`) — audit, plan, sync, and verify Vercel projects
+- Behavioral test suite with local Git fixtures
+
+---
+
+## v0.5.x — Stabilization
 
 **Focus:** Polish and reliability before expanding scope.
 
@@ -32,16 +52,8 @@ Public summary of DevTools milestones. Detailed issue tracking lives in GitHub I
 - README screenshots
 - Clean Windows install test
 - Installer polish
-- Progress indicators during long operations
+- Real-world validation against very large workspaces
 - Edge-case fixes from early user feedback
-
----
-
-## v0.5 — Power User Workflows
-
-**In progress:**
-
-- Deployment Manager (`dev deploy`) — audit many GitHub repositories against Vercel, preview missing deployments, onboard them safely, and verify production
 
 **Potential:**
 

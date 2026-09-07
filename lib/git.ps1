@@ -2,70 +2,46 @@ function Get-RepoStatusDetails {
     <#
     .SYNOPSIS
         Returns branch, change, sync, and conflict details for a repository.
+    .DESCRIPTION
+        Backward-compatible shape kept for existing callers. It is now a thin
+        projection of the shared repository state model in lib/repo-state.ps1,
+        so DevTools has one source of truth for repository status.
     #>
     param(
         [Parameter(Mandatory = $true)]
         [string]$RepoPath
     )
 
-    Push-Location $RepoPath
-    try {
-        $branch = git branch --show-current 2>$null
-        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($branch)) {
-            $branch = '(unknown)'
-        }
-        else {
-            $branch = $branch.Trim()
-        }
+    $facts = Get-RepositoryFacts -RepoPath $RepoPath
+    $state = Get-RepositoryState -Facts $facts
 
-        $porcelain = git status --porcelain 2>$null
-        $isModified = [bool]$porcelain
-        $hasConflicts = [bool](git diff --name-only --diff-filter=U 2>$null)
+    $displayStatus = $state.HealthLabel
 
-        $ahead = 0
-        $behind = 0
-        $statusLine = git status -sb 2>$null | Select-Object -First 1
-
-        if ($statusLine -match 'ahead (\d+)') {
-            $ahead = [int]$Matches[1]
-        }
-
-        if ($statusLine -match 'behind (\d+)') {
-            $behind = [int]$Matches[1]
-        }
-
-        if ($hasConflicts) {
-            $displayStatus = 'Conflicts'
-        }
-        elseif ($isModified) {
-            $displayStatus = 'Modified'
-        }
-        elseif ($ahead -gt 0 -and $behind -gt 0) {
-            $displayStatus = 'Ahead, Behind'
-        }
-        elseif ($ahead -gt 0) {
-            $displayStatus = 'Ahead'
-        }
-        elseif ($behind -gt 0) {
-            $displayStatus = 'Behind'
-        }
-        else {
-            $displayStatus = 'Clean'
-        }
-
-        return [pscustomobject]@{
-            Name          = Split-Path $RepoPath -Leaf
-            Branch        = $branch
-            IsModified    = $isModified
-            IsClean       = -not $isModified -and -not $hasConflicts -and $ahead -eq 0 -and $behind -eq 0
-            Ahead         = $ahead
-            Behind        = $behind
-            HasConflicts  = $hasConflicts
-            DisplayStatus = $displayStatus
-        }
+    if ($state.HealthCode -eq 'LocalChanges') {
+        $displayStatus = 'Modified'
     }
-    finally {
-        Pop-Location
+    elseif ($state.HealthCode -eq 'Current') {
+        $displayStatus = 'Clean'
+    }
+    elseif ($state.HealthCode -eq 'Diverged') {
+        $displayStatus = 'Ahead, Behind'
+    }
+
+    $branch = $state.CurrentBranch
+    if ([string]::IsNullOrWhiteSpace($branch)) {
+        $branch = '(unknown)'
+    }
+
+    return [pscustomobject]@{
+        Name          = $state.Name
+        Branch        = $branch
+        IsModified    = $state.IsDirty
+        IsClean       = ($state.HealthCode -eq 'Current')
+        Ahead         = $state.Ahead
+        Behind        = $state.Behind
+        HasConflicts  = $state.HasConflicts
+        DisplayStatus = $displayStatus
+        State         = $state
     }
 }
 
@@ -140,20 +116,22 @@ function Test-GitPullAlreadyCurrent {
 }
 
 function Invoke-GitPullWithOutput {
+    <#
+    .SYNOPSIS
+        Fast-forward-only pull for a single repository.
+    .DESCRIPTION
+        Kept for backward compatibility. It never creates a merge commit and
+        never rewrites history: DevTools bulk updates are fast-forward only.
+    #>
     param(
         [Parameter(Mandatory = $true)]
         [string]$RepoPath
     )
 
-    Push-Location $RepoPath
-    try {
-        $output = git pull 2>&1 | Out-String
-        return [pscustomobject]@{
-            ExitCode = $LASTEXITCODE
-            Output   = $output
-        }
-    }
-    finally {
-        Pop-Location
+    $result = Invoke-DevToolsGit -RepoPath $RepoPath -GitArgs @('pull', '--ff-only')
+
+    return [pscustomobject]@{
+        ExitCode = $result.ExitCode
+        Output   = $result.Output
     }
 }

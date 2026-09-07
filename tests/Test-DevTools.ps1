@@ -87,11 +87,11 @@ $versionPath = Join-Path $ProjectRoot 'VERSION'
 if (Test-Path -LiteralPath $versionPath) {
     $versionValue = (Get-Content -LiteralPath $versionPath -Raw).Trim()
 
-    if ($versionValue -eq '0.4.0') {
-        Write-TestPass 'VERSION is 0.4.0'
+    if ($versionValue -eq '0.5.0') {
+        Write-TestPass 'VERSION is 0.5.0'
     }
     else {
-        Write-TestFailure "VERSION expected 0.4.0 but found: $versionValue"
+        Write-TestFailure "VERSION expected 0.5.0 but found: $versionValue"
     }
 }
 else {
@@ -158,7 +158,9 @@ $commandFiles = @(
     'commands/settings.ps1'
     'commands/clone.ps1'
     'commands/update.ps1'
+    'commands/sync.ps1'
     'commands/status.ps1'
+    'commands/repos.ps1'
     'commands/backup.ps1'
     'commands/open.ps1'
     'commands/help.ps1'
@@ -175,6 +177,12 @@ foreach ($commandFile in $commandFiles) {
 }
 
 $libFiles = @(
+    'lib/repo-git.ps1'
+    'lib/repo-state.ps1'
+    'lib/repo-sync.ps1'
+    'lib/repo-repair.ps1'
+    'lib/repo-report.ps1'
+    'lib/repo-ui.ps1'
     'lib/recent.ps1'
     'lib/project-info.ps1'
     'lib/test.ps1'
@@ -293,7 +301,7 @@ Test-ReadmeContains -Text 'Commands' -Label 'Commands' | Out-Null
 Test-ReadmeContains -Text 'Roadmap' -Label 'Roadmap' | Out-Null
 Test-ReadmeContains -Text 'install.ps1' -Label 'install.ps1' | Out-Null
 Test-ReadmeContains -Text 'ExecutionPolicy Bypass' -Label 'ExecutionPolicy Bypass install' | Out-Null
-Test-ReadmeContains -Text 'v0.4.0' -Label 'v0.4.0' | Out-Null
+Test-ReadmeContains -Text 'v0.5.0' -Label 'v0.5.0' | Out-Null
 
 $readmePath = Join-Path $ProjectRoot 'README.md'
 $readmeContent = Get-Content -LiteralPath $readmePath -Raw
@@ -325,7 +333,7 @@ if (Test-Path -LiteralPath $installationDocPath) {
 }
 
 # Verify main commands are loadable (syntax-only via AST on command scripts)
-$mainCommands = @('home', 'menu', 'configure', 'settings', 'doctor', 'clone', 'update', 'status', 'backup', 'open', 'help', 'quick', 'recent', 'info', 'test', 'self', 'deploy')
+$mainCommands = @('home', 'menu', 'configure', 'settings', 'doctor', 'clone', 'update', 'sync', 'status', 'repos', 'backup', 'open', 'help', 'quick', 'recent', 'info', 'test', 'self', 'deploy')
 
 foreach ($commandName in $mainCommands) {
     $commandPath = Join-Path $ProjectRoot "commands\$commandName.ps1"
@@ -363,13 +371,35 @@ catch {
     Write-TestFailure "Show-HomeStatusFocal empty AttentionItems: $($_.Exception.Message)"
 }
 
+# Repository intelligence tests run in a child process because they create
+# throwaway Git fixtures in a temporary folder.
+$repoTestScript = Join-Path $ProjectRoot 'tests\Test-Repos.ps1'
+
+$childRunner = 'powershell.exe'
+$pwshForChildren = Get-Command pwsh -ErrorAction SilentlyContinue
+if ($pwshForChildren) { $childRunner = $pwshForChildren.Source }
+
+if (Test-Path -LiteralPath $repoTestScript) {
+    Write-Host ''
+    & $childRunner -NoProfile -ExecutionPolicy Bypass -File $repoTestScript
+    $repoExitCode = $LASTEXITCODE
+
+    if ($repoExitCode -eq 0) {
+        Write-TestPass 'Repository intelligence tests passed'
+    }
+    else {
+        Write-TestFailure "Repository intelligence tests failed (exit code $repoExitCode)"
+    }
+}
+else {
+    Write-TestFailure 'Repository intelligence tests missing: tests/Test-Repos.ps1'
+}
+
 # Deployment Manager tests run in a child process so their service mocks stay isolated.
 $deployTestScript = Join-Path $ProjectRoot 'tests\Test-Deploy.ps1'
 
 if (Test-Path -LiteralPath $deployTestScript) {
-    $deployRunner = 'powershell.exe'
-    $pwshCommand = Get-Command pwsh -ErrorAction SilentlyContinue
-    if ($pwshCommand) { $deployRunner = $pwshCommand.Source }
+    $deployRunner = $childRunner
 
     Write-Host ''
     & $deployRunner -NoProfile -ExecutionPolicy Bypass -File $deployTestScript

@@ -138,8 +138,15 @@ dev self path
 ## Repositories
 
 - [ ] Clone works
-- [ ] Update works
-- [ ] Status works
+- [ ] `dev sync` refreshes remote state and shows compact per-repository lines
+- [ ] `dev update` still works and behaves the same as `dev sync`
+- [ ] Progress shows `[n/total] Checking <name>...` and never looks frozen
+- [ ] Updated repositories report a commit count
+- [ ] Skipped repositories give a real reason, never "could not update"
+- [ ] The sync summary counts add up to the repository total
+- [ ] "Review repositories needing attention" shows explanation, work-safety note, and next step
+- [ ] `dev status` opens Repository Health on the repositories needing attention
+- [ ] Filters 1-8 work, D shows details, R refreshes, E exports a report
 - [ ] Backup prompts before committing
 - [ ] Backup completes successfully
 
@@ -147,9 +154,37 @@ dev self path
 
 ```powershell
 .\dev.cmd clone
+.\dev.cmd sync
 .\dev.cmd update
 .\dev.cmd status
 .\dev.cmd backup
+```
+
+---
+
+## Repository Maintenance
+
+- [ ] `dev repos` opens the maintenance menu
+- [ ] Repair broken upstreams finds repositories whose remote branch was deleted
+- [ ] A branch with unmerged commits is refused, with the reason shown
+- [ ] A safe repair switches to the default branch and keeps the old branch on disk
+- [ ] Branch cleanup lists safe-to-delete and needs-review counts
+- [ ] Branch cleanup asks for confirmation and never deletes an unmerged branch
+- [ ] Repository actions menu works (fetch, pull, push confirmation, switch branch, view branches)
+- [ ] Push asks for explicit confirmation before pushing anything
+- [ ] Export diagnostic report writes `reports/repositories/latest.json` and `latest.txt`
+- [ ] The exported report contains no credentials or tokens
+
+**Safety spot check** — pick a repository with uncommitted changes before running sync, then verify afterwards:
+
+- [ ] Its uncommitted changes are still there
+- [ ] `git log` is unchanged
+- [ ] It was reported as skipped with "local changes"
+
+**Command:**
+
+```powershell
+.\dev.cmd repos
 ```
 
 ---
