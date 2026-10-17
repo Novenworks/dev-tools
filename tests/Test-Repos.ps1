@@ -842,9 +842,11 @@ try {
     $example | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $installCopy 'config.example.json')
     $runner = (Get-Process -Id $PID).Path
     foreach ($command in @('doctor', 'readiness', 'sync', 'update')) {
-        $cliOptions = if ($command -in @('sync', 'update')) { @('--dry-run') } else { @() }
-        & $runner -NoProfile -File (Join-Path $installCopy 'dev-core.ps1') $command @cliOptions >$null 2>&1
-        Assert-Equal 0 $LASTEXITCODE "Entry point $command works without GitHub owners or a saved config"
+        [string[]]$cliOptions = if ($command -in @('sync', 'update')) { @('--dry-run') } else { @() }
+        $cliOutput = & $runner -NoProfile -File (Join-Path $installCopy 'dev-core.ps1') $command @cliOptions 2>&1
+        $cliExit = $LASTEXITCODE
+        if ($cliExit -ne 0) { Write-Host ($cliOutput -join "`n") }
+        Assert-Equal 0 $cliExit "Entry point $command works without GitHub owners or a saved config"
         Assert-False (Test-Path -LiteralPath (Join-Path $installCopy 'config.json')) "$command first use does not create config"
     }
     Copy-Item -LiteralPath (Join-Path $installCopy 'config.example.json') -Destination (Join-Path $installCopy 'config.json')
