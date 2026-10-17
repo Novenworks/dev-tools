@@ -9,10 +9,15 @@ jobs:
     name: Validate DevTools
     runs-on: windows-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [powershell, pwsh]
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
       - name: Run DevTools tests
-        shell: pwsh
+        shell: ${{ matrix.shell }}
         run: ./tests/Test-DevTools.ps1

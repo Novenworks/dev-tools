@@ -85,7 +85,7 @@ function Invoke-DevToolsGit {
         [int]$TimeoutSeconds = 0
     )
 
-    $allArgs = @('-C', $RepoPath) + $GitArgs
+    $allArgs = @('--no-optional-locks', '-C', $RepoPath) + $GitArgs
     $display = 'git ' + ($GitArgs -join ' ')
 
     $previousPreference = $ErrorActionPreference
@@ -448,6 +448,14 @@ function Get-RepositoryFacts {
 
     $remotes = Get-RepositoryRemotes -RepoPath $RepoPath
     $facts.RemoteName = Select-PreferredRemoteName -Remotes $remotes
+    # Refresh the branch's actual remote, which need not be origin.
+    $branch = Invoke-DevToolsGit -RepoPath $RepoPath -GitArgs @('symbolic-ref', '--quiet', '--short', 'HEAD')
+    if ($branch.Success) {
+        $trackingRemote = Invoke-DevToolsGit -RepoPath $RepoPath -GitArgs @('config', '--get', "branch.$($branch.Output).remote")
+        if ($trackingRemote.Success -and $remotes.Contains($trackingRemote.Output)) {
+            $facts.RemoteName = $trackingRemote.Output
+        }
+    }
     $facts.HasRemote = -not [string]::IsNullOrWhiteSpace($facts.RemoteName)
 
     if ($facts.HasRemote) {
@@ -492,7 +500,7 @@ function Get-RepositoryFacts {
     if ($facts.UpstreamConfigured) {
         # Git omits `branch.ab` when the upstream ref cannot be resolved, which is
         # exactly the deleted-remote-branch case. Verify before trusting it.
-        if ($parsed.HasAheadBehind) {
+        if ($parsed.HasAheadBehind -and $facts.Upstream.StartsWith("$($facts.RemoteName)/")) {
             $facts.UpstreamExists = $true
         }
         else {

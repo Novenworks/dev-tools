@@ -258,61 +258,9 @@ function Invoke-RepositorySyncFlow {
     #>
     param([switch]$SkipHeader)
 
-    if (-not $SkipHeader) {
-        ShowCommandScreen -Heading 'Sync Repositories' -Description @(
-            'Refresh GitHub state and safely update repositories that can be fast-forwarded'
-            'without touching local work.'
-        )
-    }
+    # Menu entry points use the same read-only preview as the direct command.
+    Invoke-WorkspaceHandoffCommand -Mode Sync -Arguments @()
 
-    if (-not (Test-RepositoryWorkspaceReady)) { return $null }
-
-    $repos = @(Get-WorkspaceGitRepos -WorkspacePath $Config.workspacePath)
-
-    if ($repos.Count -eq 0) {
-        ShowInfo 'No repositories found yet.'
-        ShowInfo 'Next step: run Clone missing repositories.'
-        return $null
-    }
-
-    ShowInfo "Checking $($repos.Count) repositories. This refreshes GitHub state for each one."
-    Write-Host ''
-
-    $results = Invoke-RepositorySync -WorkspacePath $Config.workspacePath `
-        -OnProgress { param($i, $t, $n) Show-RepositoryProgress -Index $i -Total $t -Name $n } `
-        -OnResult { param($r) Show-RepositorySyncResultLine -Result $r }
-
-    Clear-RepositoryProgressLine
-
-    $summary = Get-RepositorySyncSummary -Results $results
-
-    Show-RepositorySummaryCounts -Title 'Sync Summary' -Counts ([ordered]@{
-        'Updated'          = $summary.Updated
-        'Already current'  = $summary.Current
-        'Local changes'    = $summary.Dirty
-        'Ahead'            = $summary.Ahead
-        'Diverged'         = $summary.Diverged
-        'Missing upstream' = $summary.Upstream
-        'Detached HEAD'    = $summary.Detached
-        'Conflicts'        = $summary.Conflicts
-        'In progress'      = $summary.Operation
-        'Remote issues'    = $summary.Remote
-        'Other issues'     = $summary.Other
-    })
-
-    Write-Host ''
-    ShowInfo "Repositories needing attention: $($summary.NeedsAttention)"
-
-    $attention = Get-RepositorySyncAttentionResults -Results $results
-
-    if ($attention.Count -eq 0) {
-        Write-Host ''
-        ShowSuccess 'Every repository is current. Nothing needs your attention.'
-        return $results
-    }
-
-    Invoke-RepositorySyncNextSteps -Results $results -Attention $attention
-    return $results
 }
 
 function Invoke-RepositorySyncNextSteps {

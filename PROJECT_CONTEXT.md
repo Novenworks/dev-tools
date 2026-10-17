@@ -94,7 +94,7 @@ At the time of writing, DevTools includes:
 
 **Environment**
 
-- Doctor with required/optional checks and interactive fixes
+- Read-only Doctor workspace inspection; Home retains environment checks and interactive setup
 - DevTools-native GitHub sign-in messaging on Home (no raw `gh auth status` on Home)
 - Display symbols with emoji or ASCII fallback (`Get-DevToolsDisplaySymbol`)
 
@@ -102,7 +102,8 @@ At the time of writing, DevTools includes:
 
 - Clone missing GitHub repositories (`gh`, no GitHub API in DevTools)
 - One shared repository state model: facts (`repo-git.ps1`) -> pure classification (`repo-state.ps1`) -> everything else
-- `dev sync` — fetch/prune, classify, and fast-forward only provably safe repositories; `dev update` is an alias
+- `dev sync` — preview by default; explicit `--refresh` fetches only and `--apply` fetches/rechecks/fast-forwards safe branches; `dev update` is an alias
+- `dev readiness` — cached cross-machine handoff report, including non-Git folders, ignored files, stashes, and unpublished branches
 - Repository Health (`dev status`) — counts plus filters for attention, modified, behind, ahead, diverged, broken upstreams, and blocked repositories
 - Detailed classifications with explanation, local-work reassurance, and recommended action
 - Guided upstream repair for deleted remote branches (the AI agent branch case)
@@ -140,7 +141,7 @@ DevTools dogfoods itself through `dev self` and `dev test`.
 
 **Commands (entry point: `dev` / `dev.cmd`)**
 
-`home`, `menu`, `quick`, `recent`, `info`, `repos`, `test`, `self`, `configure`, `settings`, `doctor`, `clone`, `sync`, `update`, `status`, `backup`, `open`, `deploy`, `help`
+`home`, `menu`, `quick`, `recent`, `info`, `repos`, `test`, `self`, `configure`, `settings`, `doctor`, `readiness`, `clone`, `sync`, `update`, `status`, `backup`, `open`, `deploy`, `help`
 
 `dev update` is preserved as an alias for `dev sync`. Do not break it.
 
@@ -259,6 +260,7 @@ VERSION                    Single source for version string
 | `repo-sync.ps1` | Workspace state collection and the fast-forward-only sync engine |
 | `repo-repair.ps1` | Upstream repair safety rules, merged-branch cleanup |
 | `repo-report.ps1` | Repository diagnostic reports (JSON + Markdown-style text), sanitization |
+| `handoff.ps1` | Read-only cross-machine reports and explicit sync option orchestration |
 | `repo-ui.ps1` | Repository Health, Sync, maintenance menus, repair/cleanup/actions flows |
 | `github.ps1` | GitHub CLI helpers, auth check, repo listing |
 | `doctor.ps1` | Environment checks, system status, interactive fixes |
@@ -490,3 +492,5 @@ Do **not** update for every minor bug fix.
 Keep this file concise (roughly 3–5 pages). It should remain the authoritative engineering and product context for the repository.
 
 **Last reviewed:** Align with `VERSION` and repository state when editing.
+
+Cross-machine inspection never creates config or enters first-run setup. Discovery remains one level deep and excludes linked folders. Empty GitHub owners are valid for local work. See `docs/cross-machine.md`.

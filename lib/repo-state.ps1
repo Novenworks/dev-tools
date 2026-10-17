@@ -142,6 +142,7 @@ function Get-RepositoryHealthCode {
     param([Parameter(Mandatory = $true)]$Facts)
 
     if (-not $Facts.IsGitRepository) { return 'InvalidRepository' }
+    if (-not [string]::IsNullOrWhiteSpace($Facts.GitError)) { return 'OtherGitError' }
     if ($Facts.HasConflicts) { return 'Conflicts' }
     if ($Facts.MergeInProgress) { return 'MergeInProgress' }
     if ($Facts.RebaseInProgress) { return 'RebaseInProgress' }
@@ -184,6 +185,7 @@ function Test-RepositoryCanFastForward {
     param([Parameter(Mandatory = $true)]$Facts)
 
     if (-not $Facts.IsGitRepository) { return $false }
+    if (-not [string]::IsNullOrWhiteSpace($Facts.GitError)) { return $false }
     if (-not $Facts.HasRemote) { return $false }
     if ($Facts.FetchAttempted -and -not $Facts.FetchSucceeded) { return $false }
     if ($Facts.IsDetachedHead) { return $false }
@@ -264,6 +266,7 @@ function Get-RepositoryState {
     if ([string]::IsNullOrWhiteSpace($branchDisplay)) { $branchDisplay = '(unknown)' }
 
     return [pscustomobject]@{
+        Head                 = $Facts.Head
         Name                 = $Facts.Name
         Path                 = $Facts.Path
         IsGitRepository      = $Facts.IsGitRepository

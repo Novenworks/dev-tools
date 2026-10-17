@@ -42,9 +42,9 @@ Recommended screenshots:
 
 - **Guided setup wizard** — Configure your workspace in a few guided steps
 - **Home dashboard** — System Status, collapsed checklist, and recent projects when available
-- **Development environment check** — Doctor finds missing tools and guides fixes
+- **Read-only Doctor** — inspect project health and work that has not reached a remote
 - **GitHub repository cloning** — Download repositories from your GitHub owners
-- **Smart repository sync** — Refresh GitHub state and fast-forward only the repositories that are safe to update
+- **Opt-in repository sync** — preview first, then explicitly refresh or apply safe fast-forwards
 - **Repository health** — See exactly which repositories need attention across hundreds of projects, with filters
 - **Actionable classifications** — Local changes, ahead, diverged, missing upstream, detached HEAD, conflicts, and remote failures instead of "could not update"
 - **Guided upstream repair** — Recover branches whose remote branch was deleted after a merged pull request
@@ -81,13 +81,15 @@ DevTools is useful for:
 
 ## Requirements
 
-**Required**
+**Required for local inspection and Git sync**
 
 - Windows
-- PowerShell
+- PowerShell 5.1 or PowerShell 7
 - [Git](https://git-scm.com/download/win)
-- [GitHub CLI](https://cli.github.com/)
-- A GitHub account
+
+GitHub CLI and a GitHub account are needed for GitHub discovery/cloning features.
+Doctor, readiness reports, and Git sync work without GitHub CLI, cloud services, or AI.
+Git sync uses the authentication configured for Git and works with other Git hosts too.
 
 **Optional**
 
@@ -97,7 +99,7 @@ These tools are not required to get started, but DevTools can detect and work wi
 - **Node.js** and **npm** — Useful for JavaScript and web projects
 - **Claude Desktop** and **Claude Code** — Optional AI development tools
 
-Run **Doctor** to see what is installed and what is missing.
+Run **Doctor** to inspect local project health without changing anything. Home retains environment checks and setup guidance.
 
 ---
 
@@ -154,7 +156,7 @@ See [docs/installation.md](docs/installation.md) for uninstall steps, PATH troub
 3. Choose your workspace folder
 4. Add GitHub owners (usernames or organizations)
 5. Choose your default editor
-6. Run **Doctor** and sign in to GitHub if needed
+6. Sign in with `gh auth login` if using GitHub discovery/cloning
 7. **Clone** your repositories
 8. **Open** a project and start building
 
@@ -213,9 +215,10 @@ If DevTools is on your PATH after running `install.ps1`, you can use `dev` inste
 | `quick` | Open Quick Actions for frequent tasks | `dev quick` |
 | `configure` | Run the guided setup wizard | `dev configure` |
 | `settings` | Change preferences one at a time | `dev settings` |
-| `doctor` | Check your development environment | `dev doctor` |
+| `doctor` | Read-only workspace health and local-work inspection | `dev doctor` |
+| `readiness` | Cross-machine handoff report using cached remote refs | `dev readiness` |
 | `clone` | Download missing GitHub repositories | `dev clone` |
-| `sync` | Refresh GitHub state and safely fast-forward repositories | `dev sync` |
+| `sync` | Preview by default; explicit refresh/apply options | `dev sync --dry-run` |
 | `update` | Alias for `sync`, kept for existing scripts | `dev update` |
 | `status` | Repository health across the workspace | `dev status` |
 | `repos` | Repository maintenance: sync, health, repair, cleanup, reports | `dev repos` |
@@ -232,7 +235,25 @@ If DevTools is on your PATH after running `install.ps1`, you can use `dev` inste
 
 ### Repository Intelligence
 
-`dev sync` fetches, classifies, and then updates only what is safe:
+`dev doctor` and `dev readiness` inspect every top-level project folder without
+fetching, writing configuration, or offering interactive fixes. They include non-Git
+folders, missing remotes, changed/untracked files, ignored entries, local stashes,
+and commits across local branches absent from cached remote refs.
+
+```powershell
+dev doctor
+dev readiness
+dev sync --dry-run  # offline preview; plain dev sync does the same
+dev sync --refresh  # explicit fetch only; no working-tree update
+dev sync --apply    # explicit fetch, recheck, fast-forward eligible branches
+```
+
+**Ready (cached)** is conditional: no known local work needs transferring from this
+branch. Remote refs may be stale, and the destination must be checked separately.
+Git never transfers untracked/ignored files or stashes. See the
+[cross-machine guide](docs/cross-machine.md) for the laptop/desktop workflow and Windows verification.
+
+With `--apply`, sync reports outcomes such as:
 
 ```text
 * Updated: MyProject (4 commits)
@@ -241,7 +262,7 @@ If DevTools is on your PATH after running `install.ps1`, you can use `dev` inste
 ! Skipped: AgentBranch - origin/claude/rebuild-homepage no longer exists
 ```
 
-Bulk sync is **fast-forward only**. DevTools never stashes, resets, force-pulls, merges diverged
+Applied sync is **fast-forward only**, and skips projects with ignored entries to prevent overwriting local-only files. DevTools never stashes, resets, force-pulls, merges diverged
 histories, commits, pushes, or deletes unmerged branches on your behalf. When it is not certain a
 repository is safe to update, it skips it and explains why.
 
@@ -396,7 +417,7 @@ Example:
 
 1. Open DevTools
 2. Check **Home**
-3. **Update** repositories
+3. Preview `dev sync`, then use `dev sync --apply` when ready
 4. **Open** a project
 5. Build
 6. Check **Status**
@@ -409,7 +430,7 @@ Example:
 - DevTools does **not** delete repositories
 - **Backup** asks before committing or pushing
 - **Clone** skips folders that already exist
-- **Sync is fast-forward only** — no stash, no reset, no force, no merge of diverged histories, no automatic commit or push
+- **Sync previews by default; `--apply` is fast-forward only** — no stash, no reset, no force, no merge of diverged histories, no automatic commit or push
 - **Unsafe repositories are skipped and explained**, never modified
 - **Branch cleanup never force-deletes** and never removes a branch Git cannot prove is merged
 - **Upstream repair never deletes a branch** and refuses to switch when unmerged commits exist
@@ -504,7 +525,7 @@ Repository: [github.com/Novenworks/dev-tools](https://github.com/Novenworks/dev-
 
 ### Git not recognized
 
-Install Git from [git-scm.com](https://git-scm.com/download/win), restart your terminal, then run:
+Install Git from [git-scm.com](https://git-scm.com/download/win), restart your terminal, then inspect your workspace:
 
 ```powershell
 dev doctor
@@ -522,7 +543,7 @@ A session variable is cleared when you close the terminal. See [docs/deployments
 
 ### GitHub CLI not authenticated
 
-Sign in through Doctor or Home, or run:
+Sign in through Home, or run:
 
 ```powershell
 gh auth login

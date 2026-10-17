@@ -34,14 +34,22 @@ $script:DevToolsCommandArgs = @($CommandArgs)
 . (Join-Path $DevToolsRoot 'lib\recent.ps1')
 . (Join-Path $DevToolsRoot 'lib\project-info.ps1')
 . (Join-Path $DevToolsRoot 'lib\repo-ui.ps1')
+. (Join-Path $DevToolsRoot 'lib\handoff.ps1')
 . (Join-Path $DevToolsRoot 'lib\test.ps1')
 . (Join-Path $DevToolsRoot 'lib\self.ps1')
 
-$configSetup = Initialize-DevToolsConfig
+# Inspection commands must not create configuration or enter setup on first use.
+$commandName = $Command.ToLower()
+$inspectionCommand = $commandName -in @('doctor', 'readiness', 'sync', 'update')
+$configSetup = if ($inspectionCommand) {
+    [pscustomobject]@{ Created = $false }
+} else { Initialize-DevToolsConfig }
 $script:FirstRun = $configSetup.Created
 
 try {
-    $Config = Get-DevToolsConfig
+    $Config = if ($inspectionCommand -and -not (Test-DevToolsConfigFileExists)) {
+        Get-DefaultDevToolsConfig
+    } else { Get-DevToolsConfig }
 }
 catch {
     if ($script:FirstRun) {
@@ -68,7 +76,7 @@ $commandFile = Join-Path $DevToolsRoot "commands\$commandName.ps1"
 
 if (-not (Test-Path $commandFile)) {
     ShowError "Unknown command: $Command"
-    ShowInfo 'Valid commands: home, menu, quick, recent, info, repos, test, self, configure, settings, doctor, clone, sync, update, status, backup, open, deploy, help'
+    ShowInfo 'Valid commands: home, menu, quick, recent, info, repos, test, self, configure, settings, doctor, readiness, clone, sync, update, status, backup, open, deploy, help'
     exit 1
 }
 
@@ -79,6 +87,6 @@ if ($commandName -eq 'home' -and -not $script:FirstRun) {
 
 . $commandFile
 
-if ($commandName -notin @('home', 'menu', 'configure', 'settings', 'quick', 'test', 'self', 'deploy', 'status', 'repos')) {
+if ($commandName -notin @('home', 'menu', 'configure', 'settings', 'quick', 'test', 'self', 'deploy', 'status', 'repos', 'doctor', 'readiness', 'sync', 'update')) {
     Wait-ForKey
 }

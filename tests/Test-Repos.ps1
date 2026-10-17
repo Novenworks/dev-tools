@@ -27,6 +27,7 @@ $DevToolsRoot = $ProjectRoot
 . (Join-Path $ProjectRoot 'lib/repo-sync.ps1')
 . (Join-Path $ProjectRoot 'lib/repo-repair.ps1')
 . (Join-Path $ProjectRoot 'lib/repo-report.ps1')
+. (Join-Path $ProjectRoot 'lib/handoff.ps1')
 
 $script:failed = $false
 $script:passCount = 0
@@ -738,6 +739,117 @@ try {
             }
         }
     }
+
+    # Cross-machine safety: use the same offline bare-remote fixtures.
+    $handoff = New-FixtureRepository -Name 'repo-handoff'
+    $Config = [pscustomobject]@{ workspacePath = $script:Workspace }
+    $folder = Join-Path $script:Workspace 'local-only-folder'
+    New-Item -ItemType Directory -Path $folder | Out-Null
+    Set-Content -LiteralPath (Join-Path $folder 'notes.txt') -Value 'keep me'
+    Set-Content -LiteralPath (Join-Path $handoff.Path '.git/info/exclude') -Value 'private.txt'
+    Set-Content -LiteralPath (Join-Path $handoff.Path 'private.txt') -Value 'local secret'
+    $report = Get-WorkspaceHandoffReport -WorkspacePath $script:Workspace
+    $localRow = $report.Projects | Where-Object { $_.Name -eq 'local-only-folder' }
+    Assert-Equal 'Needs attention' $localRow.Readiness 'Non-Git folders appear and need separate backup'
+    $ignoredRow = $report.Projects | Where-Object { $_.Name -eq 'repo-handoff' }
+    Assert-Equal 1 $ignoredRow.IgnoredEntries 'Ignored files are reported without reading their contents'
+    Assert-Equal 'Needs attention' $ignoredRow.Readiness 'Ignored files are never declared synchronized'
+    Assert-True (($ignoredRow.Reasons -join ' ') -match 'local path') 'Local-path remotes are not assumed portable'
+
+    # A dry run / Doctor must leave every byte, including refs/index/config, alone.
+    function Get-HandoffSnapshot {
+        $hashes = @(Get-ChildItem -LiteralPath $script:Workspace -File -Force -Recurse |
+            Sort-Object FullName | ForEach-Object { $_.FullName + ':' + (Get-FileHash -LiteralPath $_.FullName).Hash })
+        return $hashes -join "`n"
+    }
+    $snapshot = Get-HandoffSnapshot
+    foreach ($mode in @('Doctor', 'Readiness', 'Sync')) {
+        Invoke-WorkspaceHandoffCommand -Mode $mode -Arguments @() 6>$null
+    }
+    Invoke-WorkspaceHandoffCommand -Mode Sync -Arguments @('--dry-run') 6>$null
+    Assert-Equal $snapshot (Get-HandoffSnapshot) 'Doctor, readiness, default sync, and dry-run preserve all project and Git bytes'
+    foreach ($options in @(@('--apply', '--dry-run'), @('--refresh', '--dry-run'), @('--typo'))) {
+        $rejected = $false
+        try { Invoke-WorkspaceHandoffCommand -Mode Sync -Arguments $options 6>$null } catch { $rejected = $true }
+        Assert-True $rejected "Invalid sync options rejected: $($options -join ' ')"
+    }
+    Assert-Equal $snapshot (Get-HandoffSnapshot) 'Invalid options cause no project changes'
+
+    $badFacts = New-RepositoryFacts -Name 'failed-status'
+    $badFacts.IsGitRepository = $true
+    $badFacts.HasRemote = $true
+    $badFacts.GitError = 'status could not be read'
+    Assert-Equal 'OtherGitError' (Get-RepositoryHealthCode -Facts $badFacts) 'Inspection failure cannot be classified as current'
+    Assert-False (Test-RepositoryCanFastForward -Facts $badFacts) 'Inspection failure cannot permit an update'
+
+    # Cached-ready wording must never imply live remote verification.
+    Remove-Item -LiteralPath (Join-Path $handoff.Path 'private.txt')
+    Invoke-FixtureGit -RepoPath $handoff.Path -GitArgs @('remote', 'set-url', 'origin', 'https://example.invalid/project.git') | Out-Null
+    $readyRow = (Get-WorkspaceHandoffReport -WorkspacePath $script:Workspace).Projects | Where-Object { $_.Name -eq 'repo-handoff' }
+    Assert-Equal 'Ready (cached)' $readyRow.Readiness 'Clean portable repository is ready with explicit cached qualification'
+    Invoke-FixtureGit -RepoPath $handoff.Path -GitArgs @('remote', 'set-url', 'origin', $handoff.Bare) | Out-Null
+    Invoke-FixtureGit -RepoPath $handoff.Path -GitArgs @('switch', '-c', 'local-feature') | Out-Null
+    New-FixtureCommit -RepoPath $handoff.Path -FileName 'feature.txt' -Content 'local branch' -Message 'Unpublished branch'
+    Invoke-FixtureGit -RepoPath $handoff.Path -GitArgs @('switch', 'main') | Out-Null
+    $branchRow = (Get-WorkspaceHandoffReport -WorkspacePath $script:Workspace).Projects | Where-Object { $_.Name -eq 'repo-handoff' }
+    Assert-Equal 1 $branchRow.UnpublishedCommits 'Unpublished commits on non-current branches are reported'
+    Set-Content -LiteralPath (Join-Path $handoff.Path 'README.md') -Value 'stashed work'
+    Invoke-FixtureGit -RepoPath $handoff.Path -GitArgs @('stash', 'push', '-m', 'test stash') | Out-Null
+    $stashRow = (Get-WorkspaceHandoffReport -WorkspacePath $script:Workspace).Projects | Where-Object { $_.Name -eq 'repo-handoff' }
+    Assert-True (($stashRow.Reasons -join ' ') -match 'stashes') 'Local stashes require separate review'
+
+    # Explicit refresh is fetch only, then apply can fast-forward a clean branch.
+    $applyRepo = New-FixtureRepository -Name 'repo-explicit-apply'
+    Add-RemoteCommit -Repository $applyRepo -FileName 'remote.txt' -Content 'new remote data'
+    $beforeHead = Get-FixtureHead -RepoPath $applyRepo.Path
+    $Config = [pscustomobject]@{ workspacePath = $script:Workspace }
+    Invoke-WorkspaceHandoffCommand -Mode Sync -Arguments @('--refresh') 6>$null
+    Assert-Equal $beforeHead (Get-FixtureHead -RepoPath $applyRepo.Path) 'Explicit refresh does not change HEAD'
+    $previewState = Get-RepositoryState -Facts (Get-RepositoryFacts -RepoPath $applyRepo.Path)
+    Set-Content -LiteralPath (Join-Path $applyRepo.Path 'README.md') -Value 'new local work'
+    $staleResult = Invoke-RepositorySyncForState -State $previewState
+    Assert-Equal 'Skipped' $staleResult.Outcome 'Stale clean preview cannot update a newly dirty repository'
+    Assert-Equal $beforeHead (Get-FixtureHead -RepoPath $applyRepo.Path) 'Stale state preserves HEAD'
+    Invoke-FixtureGit -RepoPath $applyRepo.Path -GitArgs @('checkout', '--', 'README.md') | Out-Null
+    Invoke-WorkspaceHandoffCommand -Mode Sync -Arguments @('--apply') 6>$null
+    Assert-True ($beforeHead -ne (Get-FixtureHead -RepoPath $applyRepo.Path)) 'Only explicit apply updates the clean behind branch'
+    Add-RemoteCommit -Repository $applyRepo -FileName 'ignored-collision.txt' -Content 'remote tracked content'
+    Set-Content -LiteralPath (Join-Path $applyRepo.Path '.git/info/exclude') -Value 'ignored-collision.txt'
+    Set-Content -LiteralPath (Join-Path $applyRepo.Path 'ignored-collision.txt') -Value 'precious local content'
+    $ignoredHead = Get-FixtureHead -RepoPath $applyRepo.Path
+    Invoke-WorkspaceHandoffCommand -Mode Sync -Arguments @('--apply') 6>$null
+    Assert-Equal $ignoredHead (Get-FixtureHead -RepoPath $applyRepo.Path) 'Apply skips repositories with ignored files'
+    Assert-Equal 'precious local content' ((Get-Content -LiteralPath (Join-Path $applyRepo.Path 'ignored-collision.txt') -Raw).Trim()) 'Ignored collision is never overwritten'
+
+    # A non-origin tracking remote must be the remote refreshed for sync.
+    Invoke-FixtureGit -RepoPath $handoff.Path -GitArgs @('remote', 'rename', 'origin', 'shared') | Out-Null
+    Invoke-FixtureGit -RepoPath $handoff.Path -GitArgs @('remote', 'add', 'origin', (Join-Path $script:TestRoot 'missing.git')) | Out-Null
+    $nonOrigin = Get-RepositoryFacts -RepoPath $handoff.Path -Refresh
+    Assert-Equal 'shared' $nonOrigin.RemoteName 'Refresh uses the branch tracking remote instead of assuming origin'
+    Assert-True $nonOrigin.FetchSucceeded 'Non-origin remote refresh succeeds offline'
+
+
+    # Exercise the actual entry point in an isolated installation, including first use.
+    $installCopy = Join-Path $script:TestRoot 'installation'
+    New-Item -ItemType Directory -Path $installCopy | Out-Null
+    Copy-Item -LiteralPath (Join-Path $ProjectRoot 'dev-core.ps1') -Destination $installCopy
+    foreach ($directory in @('lib', 'commands')) {
+        Copy-Item -LiteralPath (Join-Path $ProjectRoot $directory) -Destination $installCopy -Recurse
+    }
+    $example = Get-Content -LiteralPath (Join-Path $ProjectRoot 'config.example.json') -Raw | ConvertFrom-Json
+    $example.workspacePath = $script:Workspace
+    $example.githubOwners = @()
+    $example | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $installCopy 'config.example.json')
+    $runner = (Get-Process -Id $PID).Path
+    foreach ($command in @('doctor', 'readiness', 'sync', 'update')) {
+        $cliOptions = if ($command -in @('sync', 'update')) { @('--dry-run') } else { @() }
+        & $runner -NoProfile -File (Join-Path $installCopy 'dev-core.ps1') $command @cliOptions >$null 2>&1
+        Assert-Equal 0 $LASTEXITCODE "Entry point $command works without GitHub owners or a saved config"
+        Assert-False (Test-Path -LiteralPath (Join-Path $installCopy 'config.json')) "$command first use does not create config"
+    }
+    Copy-Item -LiteralPath (Join-Path $installCopy 'config.example.json') -Destination (Join-Path $installCopy 'config.json')
+    & $runner -NoProfile -File (Join-Path $installCopy 'dev-core.ps1') doctor >$null 2>&1
+    Assert-Equal 0 $LASTEXITCODE 'Existing local-only config with empty owners loads'
 
     Write-TestPass 'The repository layer never invokes reset, stash, clean, force, or rebase'
 }
