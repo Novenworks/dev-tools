@@ -68,7 +68,7 @@ $commandFile = Join-Path $DevToolsRoot "commands\$commandName.ps1"
 
 if (-not (Test-Path $commandFile)) {
     ShowError "Unknown command: $Command"
-    ShowInfo 'Valid commands: home, menu, quick, recent, info, repos, test, self, configure, settings, doctor, clone, sync, update, status, backup, open, deploy, help'
+    ShowInfo 'Valid commands: home, menu, quick, recent, info, repos, test, self, configure, settings, doctor, clone, sync, update, status, inventory, backup, open, deploy, help'
     exit 1
 }
 
@@ -79,6 +79,6 @@ if ($commandName -eq 'home' -and -not $script:FirstRun) {
 
 . $commandFile
 
-if ($commandName -notin @('home', 'menu', 'configure', 'settings', 'quick', 'test', 'self', 'deploy', 'status', 'repos')) {
+if ($commandName -notin @('home', 'menu', 'configure', 'settings', 'quick', 'test', 'self', 'deploy', 'status', 'repos', 'inventory')) {
     Wait-ForKey
 }
