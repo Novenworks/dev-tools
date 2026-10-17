@@ -50,7 +50,7 @@ function Test-DevToolsConfigValid {
     }
 
     if (-not $ConfigObject.githubOwners -or @($ConfigObject.githubOwners).Count -eq 0) {
-        $errors += 'At least one GitHub owner is required.'
+        # Empty owners are valid for local/offline work. Clone requires owners.
     }
     else {
         foreach ($owner in @($ConfigObject.githubOwners)) {

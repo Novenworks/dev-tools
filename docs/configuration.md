@@ -104,3 +104,5 @@ Manual editing of `config.json` is supported but rarely needed.
 - [Installation](installation.md)
 - [Command reference](commands.md)
 - [Deployment Manager](deployments.md)
+
+For local/offline work, `githubOwners` can be `[]`. Doctor, readiness, and Git sync do not require GitHub CLI or account access. Each computer can use a different `workspacePath`; do not copy paths blindly between computers.

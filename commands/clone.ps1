@@ -7,7 +7,7 @@ if (-not (Test-RequireGh)) { exit 1 }
 
 if (-not (Test-GhAuthenticated)) {
     ShowWarning 'You are not signed in to GitHub yet.'
-    ShowInfo 'Next step: run Doctor and sign in to GitHub.'
+    ShowInfo 'Next step: run gh auth login, then try Clone again.'
     exit 1
 }
 

@@ -154,6 +154,7 @@ $commandFiles = @(
     'commands/home.ps1'
     'commands/menu.ps1'
     'commands/doctor.ps1'
+    'commands/readiness.ps1'
     'commands/configure.ps1'
     'commands/settings.ps1'
     'commands/clone.ps1'
@@ -177,6 +178,7 @@ foreach ($commandFile in $commandFiles) {
 }
 
 $libFiles = @(
+    'lib/handoff.ps1'
     'lib/repo-git.ps1'
     'lib/repo-state.ps1'
     'lib/repo-sync.ps1'
@@ -375,9 +377,8 @@ catch {
 # throwaway Git fixtures in a temporary folder.
 $repoTestScript = Join-Path $ProjectRoot 'tests\Test-Repos.ps1'
 
-$childRunner = 'powershell.exe'
-$pwshForChildren = Get-Command pwsh -ErrorAction SilentlyContinue
-if ($pwshForChildren) { $childRunner = $pwshForChildren.Source }
+# Keep children on the invoking edition so Windows 5.1 CI exercises behavior too.
+$childRunner = (Get-Process -Id $PID).Path
 
 if (Test-Path -LiteralPath $repoTestScript) {
     Write-Host ''

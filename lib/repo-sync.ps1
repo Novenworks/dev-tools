@@ -114,7 +114,7 @@ function Invoke-RepositoryFastForward {
         [Parameter(Mandatory = $true)][string]$Upstream
     )
 
-    return Invoke-DevToolsGit -RepoPath $RepoPath -GitArgs @('merge', '--ff-only', "refs/remotes/$Upstream")
+    return Invoke-DevToolsGit -RepoPath $RepoPath -GitArgs @('merge', '--ff-only', '--no-overwrite-ignore', "refs/remotes/$Upstream")
 }
 
 function Invoke-RepositorySyncForState {
@@ -134,6 +134,21 @@ function Invoke-RepositorySyncForState {
             -GitError $State.FetchError
     }
 
+    # Never apply a stale UI/preview state after files or branches have changed.
+    $freshFacts = Get-RepositoryFacts -RepoPath $State.Path -Name $State.Name
+    $freshFacts.FetchAttempted = $State.FetchAttempted
+    $freshFacts.FetchSucceeded = $State.FetchSucceeded
+    $freshFacts.RemoteAvailable = $State.RemoteAvailable
+    $fresh = Get-RepositoryState -Facts $freshFacts
+    if (-not $fresh.CanFastForward -or $fresh.CurrentBranch -ne $State.CurrentBranch -or
+        $fresh.Upstream -ne $State.Upstream -or $fresh.Head -ne $State.Head) {
+        return New-RepositorySyncResult -State $fresh -Outcome 'Skipped' -Reason 'repository changed since inspection; review again'
+    }
+    $ignored = Invoke-DevToolsGit -RepoPath $State.Path -GitArgs @('ls-files', '--others', '--ignored', '--exclude-standard', '--directory')
+    if (-not $ignored.Success -or @($ignored.Lines).Count -gt 0) {
+        return New-RepositorySyncResult -State $fresh -Outcome 'Skipped' -Reason 'ignored files need separate review; no working-tree update'
+    }
+    $State = $fresh
     $behindBefore = $State.Behind
     $merge = Invoke-RepositoryFastForward -RepoPath $State.Path -Upstream $State.Upstream
 

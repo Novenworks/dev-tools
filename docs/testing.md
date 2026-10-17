@@ -118,3 +118,5 @@ dev self path
 - [Contributing](../CONTRIBUTING.md)
 - [Smoke test checklist](testing/smoke-test.md)
 - [Deployment Manager](deployments.md)
+
+CI runs the suite on Windows with both Windows PowerShell 5.1 and PowerShell 7. Repository tests run in the invoking PowerShell edition using disposable local bare remotes. See [cross-machine verification](cross-machine.md#windows--lenovo-verification-before-approval) before approving these changes on a laptop.

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Read-only Doctor and cross-machine readiness reports include non-Git projects, local-only files, stashes, unpublished branches, and cached ahead/behind information.
+- Sync/update preview by default. Explicit `--refresh` fetches only; `--apply` fetches, rechecks, and safely fast-forwards. Existing configuration keeps loading; no cloud or AI dependency.
+- Prevent stale-state updates, surface Git inspection failures, honor non-origin tracking remotes, and skip ignored-file collisions.
+- Add offline behavioral coverage and Windows PowerShell 5.1/7 verification.
+
 All notable changes to DevTools are documented here.
 
 ## v0.5.0

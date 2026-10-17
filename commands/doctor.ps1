@@ -1,5 +1,2 @@
-ShowCommandScreen -Heading 'Development Environment Check' -Description @(
-    'Checking your computer...'
-)
-
-Show-DoctorCheckResults -Interactive
+# Read-only: no setup, authentication, fetch, fixes, or report files.
+Invoke-WorkspaceHandoffCommand -Mode Doctor -Arguments $script:DevToolsCommandArgs

@@ -1,3 +1,10 @@
+> Cross-machine safety update: `doctor` is now a read-only workspace report.
+> `sync` and its `update` alias now preview by default, including menu/Quick Actions.
+> Use `--refresh` to fetch only, or `--apply` to fetch and fast-forward safe branches.
+> `--dry-run` never fetches and cannot be combined with either mutating option.
+> See [cross-machine workflows](cross-machine.md) for the current command contract.
+> Home retains environment setup guidance; sign in using Home or `gh auth login`.
+
 # DevTools Commands
 
 Detailed command reference for DevTools.
@@ -17,7 +24,8 @@ For a quick overview, see the [README](../README.md).
 | `dev recent` | Open a recent project |
 | `dev info` | Inspect a project |
 | `dev open` | Search and open a project |
-| `dev doctor` | Development environment check |
+| `dev doctor` | Read-only local health and handoff report |
+| `dev readiness` | Cross-machine handoff readiness (cached refs) |
 | `dev test` | Automated validation suite |
 | `dev self` | DevTools self-management menu |
 | `dev self test` | Same as `dev test` |
@@ -31,7 +39,7 @@ For a quick overview, see the [README](../README.md).
 | `dev configure` | Guided setup wizard |
 | `dev settings` | Change preferences |
 | `dev clone` | Clone missing repositories |
-| `dev sync` | Refresh GitHub state and safely fast-forward repositories |
+| `dev sync` | Offline preview; `--refresh` fetches only, `--apply` explicitly updates |
 | `dev update` | Alias for `dev sync` (kept for existing scripts) |
 | `dev status` | Repository Health overview |
 | `dev repos` | Repository maintenance menu |
@@ -45,7 +53,7 @@ For a quick overview, see the [README](../README.md).
 | `dev deploy help` | Deployment Manager help |
 | `dev help` | Beginner-friendly help |
 
-Commands under **`dev self`** manage DevTools itself. They do not replace `dev doctor`, which checks your general development environment.
+Commands under **`dev self`** manage DevTools itself. They do not replace `dev doctor`, which checks your workspace without changing it.
 
 ---
 
@@ -85,7 +93,8 @@ Includes Home, Quick Actions, Recent Projects, Project Info, Doctor, Configure, 
 | --- | --- |
 | `dev configure` | Guided setup wizard |
 | `dev settings` | Change preferences one at a time |
-| `dev doctor` | Development environment check |
+| `dev doctor` | Read-only local health and handoff report |
+| `dev readiness` | Cross-machine handoff readiness (cached refs) |
 
 ---
 
@@ -94,7 +103,7 @@ Includes Home, Quick Actions, Recent Projects, Project Info, Doctor, Configure, 
 | Command | Description |
 | --- | --- |
 | `dev clone` | Download missing GitHub repositories |
-| `dev sync` | Refresh GitHub state and safely fast-forward repositories |
+| `dev sync` | Offline preview; `--refresh` fetches only, `--apply` explicitly updates |
 | `dev update` | Alias for `dev sync` |
 | `dev status` | Repository Health across the workspace |
 | `dev repos` | Repository maintenance menu |
@@ -116,40 +125,23 @@ so every screen agrees about what a repository's situation actually is.
 | Mode | What it does | Used by |
 | --- | --- | --- |
 | **Local status** | Reads current refs only. Fast, no network. | `dev status` on open, Project Info, Repository Actions |
-| **Refreshed status** | Runs `git fetch --prune` first, so behind/diverged/deleted-upstream states are accurate. | `dev sync`, Repository Health after choosing **R**, upstream repair, report export |
+| **Refreshed status** | Runs `git fetch --prune` first, so behind/diverged/deleted-upstream states are accurate. | `dev sync --refresh` / `--apply`, Repository Health after choosing **R**, upstream repair, report export |
 
-`git fetch --prune` is read-only. It updates remote-tracking refs and removes refs whose remote
+`git fetch --prune` changes local Git metadata. It updates remote-tracking refs and removes refs whose remote
 branch was deleted. It never touches your working tree, your branches, or your history.
 
 ### `dev sync`
 
-Sync refreshes GitHub state for every repository, classifies it, and updates only what is provably safe.
+Plain `dev sync` and `dev sync --dry-run` preview cached state without fetching or updating.
+`dev sync --refresh` explicitly fetches only. `dev sync --apply` explicitly fetches,
+classifies, rechecks local state, and fast-forwards eligible repositories. The update
+alias and menu sync entry points follow the same preview-first contract.
 
-A repository is updated automatically **only** when all of these are true:
-
-- It is a valid Git repository with a reachable remote
-- The fetch succeeded
-- HEAD is on a branch (not detached)
-- No merge, rebase, cherry-pick, or revert is in progress
-- There are no conflicts
-- The working tree is clean
-- A valid upstream branch exists
-- The branch is not ahead and not diverged
-- The branch is behind by at least one commit
-
-The update itself is fast-forward only, so bulk sync never creates a merge commit.
-
-Output stays compact for large workspaces:
-
-```text
-* Updated: MyProject (4 commits)
-. Current: AnotherProject
-! Skipped: OldDemo - local changes
-! Skipped: AgentBranch - origin/claude/rebuild-homepage no longer exists
-```
-
-Progress is shown as `[42/298] Checking bella-demo...` while sync runs. A failure in one repository
-never stops the batch.
+Applied updates require a successful fetch, a valid branch/upstream, a clean tree,
+no conflicts or operations in progress, no ignored entries, no local ahead commits,
+and at least one behind commit. No merge commits are created. Blocked repositories
+are skipped with a reason. See [cross-machine workflows](cross-machine.md) for
+limitations, separate file backup, and Windows verification.
 
 ### Classifications
 
@@ -323,7 +315,7 @@ dev test
 
 ## Global install and self-management
 
-Commands under `dev self` manage **DevTools itself** — testing, inspection, safe updates, and PATH setup. This is separate from `dev doctor`, which checks your general development environment.
+Commands under `dev self` manage **DevTools itself** — testing, inspection, safe updates, and PATH setup. This is separate from `dev doctor`, which checks your workspace without changing it.
 
 | Command | Description |
 | --- | --- |
