@@ -15,6 +15,7 @@ On first run, DevTools creates `config.json` from `config.example.json`.
 | `defaultEditor` | Editor command for Open Project | `cursor`, `code`, `explorer` |
 | `autoBackupMessage` | Default commit message for backup | `Auto backup` |
 | `autoUpdate` | Reserved for future auto-update behavior | `false` |
+| `syncConcurrency` | How many repositories `dev sync` refreshes at once (default 8, range 1-32, 1 = sequential) |
 | `deployments` | Deployment Manager settings (optional) | see below |
 
 ---

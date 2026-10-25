@@ -43,6 +43,7 @@ VERSION                    Single source for version string
 - Repository state has one source of truth: `repo-git.ps1` acquires facts, `repo-state.ps1` classifies them, and everything else consumes the result.
 - Git data acquisition, classification, recommended actions, UI rendering, and mutation are separate layers. Classification is pure and testable without Git.
 - Bulk repository updates are fast-forward only. Unsafe states are classified and reported, never automatically modified.
+- Only the read-only fetch phase runs in parallel. Inspection, classification and mutation stay single-threaded, so concurrency can change sync speed but never its decisions.
 - User config stays local and gitignored.
 - Deployment `audit`, `plan`, `verify`, and `status` are read-only. Only `sync` mutates, and only after confirmation.
 - Credentials come from the environment, never from tracked files.
@@ -60,6 +61,7 @@ VERSION                    Single source for version string
 | `git.ps1` | Workspace repository discovery and backward-compatible status projection |
 | `repo-git.ps1` | Git invocation result model, porcelain v2 parsing, fetch, raw repository facts |
 | `repo-state.ps1` | Pure health classification, safe-update policy, filters, summaries |
+| `repo-parallel.ps1` | Parallel remote refresh (runspace pool), sync concurrency setting |
 | `repo-sync.ps1` | Workspace collection and the fast-forward-only sync engine |
 | `repo-repair.ps1` | Upstream repair safety rules and merged-branch cleanup |
 | `repo-report.ps1` | Repository diagnostic reports (JSON and Markdown-style text) |

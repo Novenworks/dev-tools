@@ -23,6 +23,7 @@ $DevToolsRoot = $ProjectRoot
 . (Join-Path $ProjectRoot 'lib/ui.ps1')
 . (Join-Path $ProjectRoot 'lib/git.ps1')
 . (Join-Path $ProjectRoot 'lib/repo-git.ps1')
+. (Join-Path $ProjectRoot 'lib/repo-parallel.ps1')
 . (Join-Path $ProjectRoot 'lib/repo-state.ps1')
 . (Join-Path $ProjectRoot 'lib/repo-sync.ps1')
 . (Join-Path $ProjectRoot 'lib/repo-repair.ps1')
@@ -721,11 +722,162 @@ try {
     Assert-True ($coreContent -match 'dev sync|sync, update' -or $coreContent -match 'clone, sync') 'dev-core lists sync as a valid command'
 
     # -----------------------------------------------------------------------
+    # 26. Sync concurrency
+    # -----------------------------------------------------------------------
+
+    # Concurrency resolution is pure and tolerant of old configs.
+    Assert-Equal 8 (Get-RepositorySyncConcurrency -ConfigObject $null) 'Concurrency falls back to the default with no config'
+    Assert-Equal 8 (Get-RepositorySyncConcurrency -ConfigObject ([pscustomobject]@{ workspacePath = 'C:\x' })) 'A config written before this feature keeps working'
+    Assert-Equal 4 (Get-RepositorySyncConcurrency -ConfigObject ([pscustomobject]@{ syncConcurrency = 4 })) 'An explicit concurrency is honoured'
+    Assert-Equal 4 (Get-RepositorySyncConcurrency -ConfigObject ([pscustomobject]@{ syncConcurrency = '4' })) 'A string concurrency is parsed'
+    Assert-Equal 1 (Get-RepositorySyncConcurrency -ConfigObject ([pscustomobject]@{ syncConcurrency = 0 })) 'Concurrency is clamped to at least 1'
+    Assert-Equal 1 (Get-RepositorySyncConcurrency -ConfigObject ([pscustomobject]@{ syncConcurrency = -5 })) 'A negative concurrency is clamped to 1'
+    Assert-Equal 32 (Get-RepositorySyncConcurrency -ConfigObject ([pscustomobject]@{ syncConcurrency = 999 })) 'Concurrency is capped'
+    Assert-Equal 8 (Get-RepositorySyncConcurrency -ConfigObject ([pscustomobject]@{ syncConcurrency = 'lots' })) 'An unparseable concurrency falls back to the default'
+
+    # Only repositories with a remote are fetch targets.
+    $allRepos = @(Get-WorkspaceGitRepos -WorkspacePath $script:Workspace)
+    $fetchTargets = @(Get-RepositoryFetchTargets -Repositories $allRepos)
+    Assert-True ($fetchTargets.Count -gt 0) 'Fetch targets are discovered'
+    Assert-False (@($fetchTargets | Where-Object { $_.Name -eq 'repo-no-remote' }).Count -gt 0) 'A repository with no remote is not a fetch target'
+    Assert-False (@($fetchTargets | Where-Object { $_.Name -eq 'repo-broken' }).Count -gt 0) 'A broken repository is not a fetch target'
+    Assert-False (@($fetchTargets | Where-Object { [string]::IsNullOrWhiteSpace($_.RemoteName) }).Count -gt 0) 'Every fetch target names its remote'
+
+    # The parallel fetch returns one result per target and isolates failures.
+    $parallelResults = Invoke-ParallelGitFetch -Targets $fetchTargets -ThrottleLimit 8
+    Assert-Equal $fetchTargets.Count $parallelResults.Count 'The parallel fetch returns one result per repository'
+
+    foreach ($target in $fetchTargets) {
+        if (-not $parallelResults.ContainsKey($target.Path)) {
+            Write-TestFailure "The parallel fetch skipped $($target.Name)"
+        }
+    }
+    Write-TestPass 'The parallel fetch covers every target'
+
+    $healthyFetch = $parallelResults[(Join-Path $script:Workspace 'repo-current')]
+    Assert-True $healthyFetch.Success 'A reachable repository fetches successfully in parallel'
+
+    $brokenFetch = $parallelResults[(Join-Path $script:Workspace 'repo-fetch-fail')]
+    Assert-False $brokenFetch.Success 'An unreachable remote still reports failure in parallel'
+    Assert-True (-not [string]::IsNullOrWhiteSpace($brokenFetch.Output)) 'A parallel fetch failure keeps the Git error'
+    Assert-True ($parallelResults[(Join-Path $script:Workspace 'repo-behind')].Success) 'One failing fetch does not affect the others'
+
+    # Sequential and parallel fetches agree.
+    $sequentialResults = Invoke-ParallelGitFetch -Targets $fetchTargets -ThrottleLimit 1
+    Assert-Equal $parallelResults.Count $sequentialResults.Count 'Sequential and parallel fetches cover the same repositories'
+
+    $disagreements = 0
+    foreach ($key in $parallelResults.Keys) {
+        if ($parallelResults[$key].Success -ne $sequentialResults[$key].Success) { $disagreements++ }
+    }
+    Assert-Equal 0 $disagreements 'Sequential and parallel fetches agree on every outcome'
+
+    # A supplied fetch result is used instead of fetching again.
+    $suppliedFailure = New-FetchOutcome -ExitCode 128 -Output 'fatal: Authentication failed for https://github.com/acme/site.git'
+    $suppliedFacts = Get-RepositoryFacts -RepoPath (Join-Path $script:Workspace 'repo-current') -FetchResult $suppliedFailure
+    Assert-True $suppliedFacts.FetchAttempted 'A supplied fetch result counts as an attempted fetch'
+    Assert-False $suppliedFacts.FetchSucceeded 'A supplied fetch result is honoured rather than re-fetched'
+    Assert-Equal 'Authentication' $suppliedFacts.FetchErrorCategory 'A supplied fetch error is categorized'
+    Assert-Equal 'AuthenticationFailed' (Get-RepositoryState -Facts $suppliedFacts).HealthCode 'A supplied fetch failure classifies normally'
+
+    # A repository with no remote is never marked as fetched.
+    $noRemoteFacts = Get-RepositoryFacts -RepoPath (Join-Path $script:Workspace 'repo-no-remote') -Refresh
+    Assert-False $noRemoteFacts.FetchAttempted 'A repository with no remote is never fetched'
+
+    # -----------------------------------------------------------------------
+    # 27. Concurrency changes speed, never outcomes
+    # -----------------------------------------------------------------------
+
+    function New-ComparisonWorkspace {
+        param([string]$Suffix)
+
+        $root = Join-Path $script:TestRoot "compare-$Suffix"
+        New-Item -ItemType Directory -Path $root -Force | Out-Null
+
+        foreach ($name in @('alpha', 'bravo', 'charlie', 'delta')) {
+            $bare = Join-Path $script:Remotes "$Suffix-$name.git"
+            Invoke-FixtureGit -GitArgs @('-c', 'init.defaultBranch=main', 'init', '--bare', '--quiet', $bare) | Out-Null
+
+            $seed = Join-Path $script:TestRoot "seed-$Suffix-$name"
+            Invoke-FixtureGit -GitArgs @('-c', 'init.defaultBranch=main', 'init', '--quiet', $seed) | Out-Null
+            Set-FixtureIdentity -RepoPath $seed
+            New-FixtureCommit -RepoPath $seed -FileName 'README.md' -Content 'seed' -Message 'Initial commit'
+            Invoke-FixtureGit -RepoPath $seed -GitArgs @('remote', 'add', 'origin', $bare) | Out-Null
+            Invoke-FixtureGit -RepoPath $seed -GitArgs @('push', '--quiet', '-u', 'origin', 'main') | Out-Null
+            Remove-Item -LiteralPath $seed -Recurse -Force
+
+            $work = Join-Path $root $name
+            Invoke-FixtureGit -GitArgs @('clone', '--quiet', $bare, $work) | Out-Null
+            Set-FixtureIdentity -RepoPath $work
+
+            $repo = [pscustomobject]@{ Name = $name; Path = $work; Bare = $bare }
+
+            switch ($name) {
+                'bravo' { Add-RemoteCommit -Repository $repo }
+                'charlie' { Set-Content -LiteralPath (Join-Path $work 'README.md') -Value 'work in progress' -Encoding UTF8 }
+                'delta' { New-FixtureCommit -RepoPath $work -FileName 'local.txt' -Content 'local' -Message 'Local commit' }
+            }
+        }
+
+        return $root
+    }
+
+    $sequentialWorkspace = New-ComparisonWorkspace -Suffix 'seq'
+    $concurrentWorkspace = New-ComparisonWorkspace -Suffix 'par'
+
+    $sequentialSync = Invoke-RepositorySync -WorkspacePath $sequentialWorkspace -ThrottleLimit 1
+    $concurrentSync = Invoke-RepositorySync -WorkspacePath $concurrentWorkspace -ThrottleLimit 8
+
+    Assert-Equal 4 $sequentialSync.Count 'The sequential comparison run covers every repository'
+    Assert-Equal 4 $concurrentSync.Count 'The concurrent comparison run covers every repository'
+
+    $sequentialByName = @{}
+    foreach ($result in $sequentialSync) { $sequentialByName[$result.Name] = $result }
+    $concurrentByName = @{}
+    foreach ($result in $concurrentSync) { $concurrentByName[$result.Name] = $result }
+
+    $mismatches = @()
+    foreach ($name in $sequentialByName.Keys) {
+        $a = $sequentialByName[$name]
+        $b = $concurrentByName[$name]
+
+        if ($null -eq $b) { $mismatches += "$name missing"; continue }
+        if ($a.Outcome -ne $b.Outcome) { $mismatches += "$name outcome $($a.Outcome) vs $($b.Outcome)" }
+        if ($a.Reason -ne $b.Reason) { $mismatches += "$name reason" }
+        if ($a.CommitsPulled -ne $b.CommitsPulled) { $mismatches += "$name commits" }
+        if ($a.State.HealthCode -ne $b.State.HealthCode) { $mismatches += "$name health" }
+    }
+
+    Assert-Equal 0 $mismatches.Count "Concurrency does not change any sync outcome ($($mismatches -join '; '))"
+
+    Assert-Equal 'Updated' $concurrentByName['bravo'].Outcome 'The concurrent run still fast-forwards a safe repository'
+    Assert-Equal 'Current' $concurrentByName['alpha'].Outcome 'The concurrent run still reports a current repository'
+    Assert-Equal 'Skipped' $concurrentByName['charlie'].Outcome 'The concurrent run still skips local changes'
+    Assert-Equal 'local changes' $concurrentByName['charlie'].Reason 'The concurrent run keeps the actionable skip reason'
+    Assert-Equal 'Skipped' $concurrentByName['delta'].Outcome 'The concurrent run still skips an ahead repository'
+
+    # Local work survives a concurrent sync too.
+    $charlieReadme = Get-Content -LiteralPath (Join-Path $concurrentWorkspace 'charlie/README.md') -Raw
+    Assert-True ($charlieReadme -match 'work in progress') 'Uncommitted changes survive a concurrent sync'
+    $deltaLog = Invoke-FixtureGit -RepoPath (Join-Path $concurrentWorkspace 'delta') -GitArgs @('log', '--oneline', 'HEAD')
+    Assert-True ($deltaLog -match 'Local commit') 'Local commits survive a concurrent sync'
+    Assert-False ($deltaLog -match '(?i)merge') 'A concurrent sync never creates a merge commit'
+
+    # Progress output for the refresh phase.
+    Assert-Equal '[42/298] Refreshed bella-demo' (Format-RepositoryFetchProgressLine -Completed 42 -Total 298 -Name 'bella-demo') 'Refresh progress is compact at workspace scale'
+
+    # Progress fields are fixed width so an in-place update never leaves residue.
+    Assert-Equal 74 (Format-RepositoryProgressField -Text 'short').Length 'A short progress line is padded to full width'
+    Assert-Equal 74 (Format-RepositoryProgressField -Text ('x' * 200)).Length 'A long progress line is truncated to full width'
+    Assert-True ((Format-RepositoryProgressField -Text ('x' * 200)).EndsWith('...')) 'A truncated progress line is marked with an ellipsis'
+    Assert-True ((Format-RepositoryProgressField -Text 'short').StartsWith('short')) 'Padding preserves the original text'
+
+    # -----------------------------------------------------------------------
     # 25. Safety: no destructive Git verbs anywhere in the repository layer
     # -----------------------------------------------------------------------
     $forbiddenArguments = @('reset', 'stash', 'clean', 'rebase', 'cherry-pick', 'revert', '-D', '--force', '-f', '--hard', '--allow-unrelated-histories')
 
-    foreach ($module in @('repo-git.ps1', 'repo-state.ps1', 'repo-sync.ps1', 'repo-repair.ps1', 'repo-report.ps1', 'repo-ui.ps1')) {
+    foreach ($module in @('repo-git.ps1', 'repo-state.ps1', 'repo-sync.ps1', 'repo-repair.ps1', 'repo-report.ps1', 'repo-ui.ps1', 'repo-parallel.ps1')) {
         $content = Get-Content -LiteralPath (Join-Path $ProjectRoot "lib/$module") -Raw
 
         foreach ($match in [regex]::Matches($content, '-GitArgs\s+@\(([^)]*)\)')) {
@@ -738,6 +890,13 @@ try {
             }
         }
     }
+
+    # repo-parallel.ps1 calls git directly rather than through Invoke-DevToolsGit,
+    # so its one invocation is checked explicitly: it must only ever fetch.
+    $parallelSource = Get-Content -LiteralPath (Join-Path $ProjectRoot 'lib/repo-parallel.ps1') -Raw
+    $parallelInvocations = @([regex]::Matches($parallelSource, '&\s+git\s+@(\w+)'))
+    Assert-Equal 1 $parallelInvocations.Count 'The parallel module invokes git exactly once'
+    Assert-True ($parallelSource -match "@\('-C',\s*\`$RepoPath,\s*'fetch',\s*'--prune',\s*'--quiet'\)") 'The parallel module only ever runs a read-only fetch --prune'
 
     Write-TestPass 'The repository layer never invokes reset, stash, clean, force, or rebase'
 }

@@ -15,16 +15,31 @@ function Get-WorkspaceRepositoryStates {
     .PARAMETER OnProgress
         Optional scriptblock called as (index, total, name) so long runs never
         look frozen at workspace scale.
+    .PARAMETER ThrottleLimit
+        How many repositories may be fetched at once when -Refresh is set.
+        Ignored for a local read, which performs no fetch.
+    .PARAMETER OnFetchProgress
+        Optional scriptblock called as (completed, total, name) during the
+        parallel refresh phase.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$WorkspacePath,
         [switch]$Refresh,
-        [scriptblock]$OnProgress
+        [scriptblock]$OnProgress,
+        [int]$ThrottleLimit = 0,
+        [scriptblock]$OnFetchProgress
     )
 
     $repos = @(Get-WorkspaceGitRepos -WorkspacePath $WorkspacePath)
     $states = @()
     $index = 0
+
+    # Phase 1: refresh remote state. Fetching is the slow, network-bound part,
+    # so it runs in parallel. Inspection below stays sequential.
+    $fetchResults = @{}
+    if ($Refresh) {
+        $fetchResults = Invoke-RepositoryPrefetch -Repositories $repos -ThrottleLimit $ThrottleLimit -OnProgress $OnFetchProgress
+    }
 
     foreach ($repo in $repos) {
         $index++
@@ -33,9 +48,14 @@ function Get-WorkspaceRepositoryStates {
             & $OnProgress $index $repos.Count $repo.Name
         }
 
+        $fetchResult = $null
+        if ($fetchResults.ContainsKey($repo.FullName)) {
+            $fetchResult = $fetchResults[$repo.FullName]
+        }
+
         # A single failing repository must never terminate the batch.
         try {
-            $facts = Get-RepositoryFacts -RepoPath $repo.FullName -Name $repo.Name -Refresh:$Refresh
+            $facts = Get-RepositoryFacts -RepoPath $repo.FullName -Name $repo.Name -Refresh:$Refresh -FetchResult $fetchResult
             $states += Get-RepositoryState -Facts $facts
         }
         catch {
@@ -166,17 +186,34 @@ function Invoke-RepositorySync {
     .DESCRIPTION
         FETCH -> INSPECT -> CLASSIFY -> SAFELY UPDATE -> REPORT.
         Unsafe repositories are skipped and explained, never modified.
+
+        The fetch phase runs in parallel because it is network-bound and
+        dominates wall-clock time across a large workspace. Inspection,
+        classification and the fast-forward itself remain sequential on this
+        thread, so the safe-update policy is applied exactly as before and
+        only one repository is ever mutated at a time.
+    .PARAMETER ThrottleLimit
+        How many repositories may be fetched at once. 1 is fully sequential.
+    .PARAMETER OnFetchProgress
+        Optional scriptblock called as (completed, total, name) while fetching.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$WorkspacePath,
         [scriptblock]$OnProgress,
-        [scriptblock]$OnResult
+        [scriptblock]$OnResult,
+        [int]$ThrottleLimit = 0,
+        [scriptblock]$OnFetchProgress
     )
 
     $repos = @(Get-WorkspaceGitRepos -WorkspacePath $WorkspacePath)
     $results = @()
     $index = 0
 
+    # Phase 1 (parallel): refresh remote state for every repository that has a
+    # remote. Read-only; one fetch per repository, exactly as before.
+    $fetchResults = Invoke-RepositoryPrefetch -Repositories $repos -ThrottleLimit $ThrottleLimit -OnProgress $OnFetchProgress
+
+    # Phase 2 (sequential): inspect, classify, and fast-forward what is safe.
     foreach ($repo in $repos) {
         $index++
 
@@ -184,8 +221,13 @@ function Invoke-RepositorySync {
             & $OnProgress $index $repos.Count $repo.Name
         }
 
+        $fetchResult = $null
+        if ($fetchResults.ContainsKey($repo.FullName)) {
+            $fetchResult = $fetchResults[$repo.FullName]
+        }
+
         try {
-            $facts = Get-RepositoryFacts -RepoPath $repo.FullName -Name $repo.Name -Refresh
+            $facts = Get-RepositoryFacts -RepoPath $repo.FullName -Name $repo.Name -Refresh -FetchResult $fetchResult
             $state = Get-RepositoryState -Facts $facts
             $result = Invoke-RepositorySyncForState -State $state
         }

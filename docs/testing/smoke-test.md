@@ -140,7 +140,9 @@ dev self path
 - [ ] Clone works
 - [ ] `dev sync` refreshes remote state and shows compact per-repository lines
 - [ ] `dev update` still works and behaves the same as `dev sync`
-- [ ] Progress shows `[n/total] Checking <name>...` and never looks frozen
+- [ ] Progress shows `[n/total] Refreshed <name>` while fetching, then `[n/total] Checking <name>...`, and never looks frozen
+- [ ] Sync is noticeably faster than a sequential run (`"syncConcurrency": 1` in `config.json` to compare)
+- [ ] Setting `"syncConcurrency": 1` still produces the same per-repository results, just slower
 - [ ] Updated repositories report a commit count
 - [ ] Skipped repositories give a real reason, never "could not update"
 - [ ] The sync summary counts add up to the repository total

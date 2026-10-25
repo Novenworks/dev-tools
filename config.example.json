@@ -4,6 +4,7 @@
   "defaultEditor": "cursor",
   "autoBackupMessage": "Auto backup",
   "autoUpdate": false,
+  "syncConcurrency": 8,
   "deployments": {
     "provider": "vercel",
     "vercelTeam": "",

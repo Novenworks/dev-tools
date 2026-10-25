@@ -411,11 +411,16 @@ function Get-RepositoryFacts {
     .PARAMETER Refresh
         When set, runs `git fetch --prune` first so ahead/behind and upstream
         existence reflect the real remote instead of stale local refs.
+    .PARAMETER FetchResult
+        An already-completed fetch result for this repository, as produced by
+        the parallel prefetch in repo-parallel.ps1. When supplied the fetch is
+        treated as already done, so a repository is never fetched twice.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$RepoPath,
         [string]$Name = '',
-        [switch]$Refresh
+        [switch]$Refresh,
+        $FetchResult = $null
     )
 
     if ([string]::IsNullOrWhiteSpace($Name)) {
@@ -454,9 +459,14 @@ function Get-RepositoryFacts {
         $facts.RemoteUrl = Get-SanitizedRemoteUrl -Url $remotes[$facts.RemoteName]
     }
 
-    if ($Refresh -and $facts.HasRemote) {
+    if ($facts.HasRemote -and ($Refresh -or $FetchResult)) {
         $facts.FetchAttempted = $true
-        $fetch = Invoke-RepositoryFetch -RepoPath $RepoPath -RemoteName $facts.RemoteName
+
+        $fetch = $FetchResult
+        if (-not $fetch) {
+            $fetch = Invoke-RepositoryFetch -RepoPath $RepoPath -RemoteName $facts.RemoteName
+        }
+
         $facts.FetchSucceeded = $fetch.Success
         $facts.RemoteAvailable = $fetch.Success
 
