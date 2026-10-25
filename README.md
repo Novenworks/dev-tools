@@ -44,7 +44,7 @@ Recommended screenshots:
 - **Home dashboard** — System Status, collapsed checklist, and recent projects when available
 - **Development environment check** — Doctor finds missing tools and guides fixes
 - **GitHub repository cloning** — Download repositories from your GitHub owners
-- **Smart repository sync** — Refresh GitHub state and fast-forward only the repositories that are safe to update
+- **Smart repository sync** — Refresh GitHub state and fast-forward only the repositories that are safe to update, fetching several at once so a large workspace does not crawl
 - **Repository health** — See exactly which repositories need attention across hundreds of projects, with filters
 - **Actionable classifications** — Local changes, ahead, diverged, missing upstream, detached HEAD, conflicts, and remote failures instead of "could not update"
 - **Guided upstream repair** — Recover branches whose remote branch was deleted after a merged pull request

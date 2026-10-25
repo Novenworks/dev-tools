@@ -178,6 +178,7 @@ foreach ($commandFile in $commandFiles) {
 
 $libFiles = @(
     'lib/repo-git.ps1'
+    'lib/repo-parallel.ps1'
     'lib/repo-state.ps1'
     'lib/repo-sync.ps1'
     'lib/repo-repair.ps1'

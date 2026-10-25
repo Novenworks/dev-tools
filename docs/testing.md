@@ -56,6 +56,7 @@ Covered scenarios:
 - Classification priority, porcelain v2 parsing, and Git error categorization
 - Output formatting, the ASCII fallback, and compact progress text
 - `dev update` compatibility and the new `dev sync` command
+- Sync concurrency: the setting's defaults and clamping, fetch-target selection, isolated per-repository fetch failures, and that a sequential run and a concurrent run of the same workspace produce identical outcomes
 
 **The most important assertions prove no local work is lost.** After a full bulk sync, dirty, ahead,
 diverged, detached, conflicted, and broken-upstream repositories must have an unchanged HEAD,

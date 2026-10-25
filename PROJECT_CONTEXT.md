@@ -109,6 +109,7 @@ At the time of writing, DevTools includes:
 - Safe merged-branch cleanup (`git branch -d` only, never `-D`, never unmerged)
 - Repository Maintenance menu (`dev repos`) and single-repository actions
 - Diagnostic reports in the gitignored `reports/repositories/` folder
+- Parallel remote refresh so a ~300-repository sync is bound by throughput, not by one round trip at a time
 - Compact progress feedback at ~300-repository scale
 - Safe backup (always confirms before commit/push)
 
@@ -256,6 +257,7 @@ VERSION                    Single source for version string
 | `git.ps1` | Workspace repo discovery, Git availability, backward-compatible status projection |
 | `repo-git.ps1` | Git result model, porcelain v2 parsing, fetch/prune, raw repository facts |
 | `repo-state.ps1` | Pure classification, safe-update policy, filters, summaries (no Git, no UI) |
+| `repo-parallel.ps1` | Parallel remote refresh via runspace pool; sync concurrency resolution |
 | `repo-sync.ps1` | Workspace state collection and the fast-forward-only sync engine |
 | `repo-repair.ps1` | Upstream repair safety rules, merged-branch cleanup |
 | `repo-report.ps1` | Repository diagnostic reports (JSON + Markdown-style text), sanitization |
@@ -386,13 +388,13 @@ If not, add a GitHub Issue to the backlog instead of expanding the current miles
 
 **Highest**
 
-- v0.5.x stabilization: validate sync against a real ~300-repository workspace, README screenshots, clean install validation
+- v0.5.x stabilization: measure sync wall-clock against the real ~300-repository workspace now that fetching is parallel, README screenshots, clean install validation
 - Documentation sync with shipped features
 - Keep CI green
 
 **Medium**
 
-- Sync performance tuning if fetch-per-repository proves too slow at scale
+- Parallel inspection, only if the sequential inspect phase (about 5 git calls per repository) becomes the dominant cost now that fetching is parallel
 - Favorites, project profiles, workspace profiles, launch workflows
 - Polish Recent Projects, Project Info, and Quick Actions based on feedback
 
@@ -444,6 +446,8 @@ Significant decisions (append new entries; do not delete history).
 | — | **`dev sync` added, `dev update` kept as an alias** | Sync is the honest name for the workflow; breaking existing scripts is not acceptable. |
 | — | **Repository reports live in gitignored `reports/repositories/`** | Matches the deployment report convention; remote URLs are sanitized so credentials never reach disk. |
 | — | **Branch deletion requires proof of merge** | `git branch -d` only, never `-D`; stale is not the same as safe. |
+| — | **Only the fetch phase is parallel; inspection and mutation stay single-threaded** | `git fetch --prune` is read-only and network-bound, so it parallelizes safely and is where the time goes. Keeping classification and fast-forward sequential means concurrency changes speed but never decisions. |
+| — | **Runspace pool rather than `ForEach-Object -Parallel`** | DevTools supports Windows PowerShell 5.1, where `-Parallel` does not exist. The parallel scriptblock calls git directly, so no module state is copied into runspaces and the parallel path cannot drift from the sequential one. |
 
 ---
 

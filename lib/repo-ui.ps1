@@ -76,6 +76,54 @@ function Clear-RepositoryProgressLine {
     Write-Host ("`r" + (' ' * $Width) + "`r") -NoNewline
 }
 
+function Format-RepositoryProgressField {
+    <#
+    .SYNOPSIS
+        Truncates and pads progress text to a fixed width. Pure function.
+    .DESCRIPTION
+        A fixed width means each in-place update fully overwrites the previous
+        one, so a short line never leaves part of a longer one behind.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Text,
+        [int]$Width = 74
+    )
+
+    if ($Text.Length -gt $Width) {
+        return $Text.Substring(0, $Width - 3) + '...'
+    }
+
+    return $Text.PadRight($Width)
+}
+
+function Format-RepositoryFetchProgressLine {
+    <#
+    .SYNOPSIS
+        Progress text for the parallel refresh phase. Pure function.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][int]$Completed,
+        [Parameter(Mandatory = $true)][int]$Total,
+        [Parameter(Mandatory = $true)][string]$Name
+    )
+
+    return "[$Completed/$Total] Refreshed $Name"
+}
+
+function Show-RepositoryFetchProgress {
+    param(
+        [Parameter(Mandatory = $true)][int]$Completed,
+        [Parameter(Mandatory = $true)][int]$Total,
+        [Parameter(Mandatory = $true)][string]$Name
+    )
+
+    $text = Format-RepositoryFetchProgressLine -Completed $Completed -Total $Total -Name $Name
+
+    # Padded so a shorter line never leaves residue from a longer one, including
+    # when the refresh phase hands over to the inspection phase.
+    Write-Host ("`r  " + (Format-RepositoryProgressField -Text $text)) -NoNewline -ForegroundColor DarkGray
+}
+
 function Show-RepositoryProgress {
     param(
         [Parameter(Mandatory = $true)][int]$Index,
@@ -85,11 +133,7 @@ function Show-RepositoryProgress {
 
     $text = Format-RepositoryProgressLine -Index $Index -Total $Total -Name $Name
 
-    if ($text.Length -gt 74) {
-        $text = $text.Substring(0, 71) + '...'
-    }
-
-    Write-Host ("`r  $text") -NoNewline -ForegroundColor DarkGray
+    Write-Host ("`r  " + (Format-RepositoryProgressField -Text $text)) -NoNewline -ForegroundColor DarkGray
 }
 
 function Show-RepositorySyncResultLine {
@@ -275,10 +319,17 @@ function Invoke-RepositorySyncFlow {
         return $null
     }
 
+    $concurrency = Get-RepositorySyncConcurrency -ConfigObject $Config
+
     ShowInfo "Checking $($repos.Count) repositories. This refreshes GitHub state for each one."
+    if ($concurrency -gt 1) {
+        ShowInfo "Refreshing up to $concurrency at a time."
+    }
     Write-Host ''
 
     $results = Invoke-RepositorySync -WorkspacePath $Config.workspacePath `
+        -ThrottleLimit $concurrency `
+        -OnFetchProgress { param($c, $t, $n) Show-RepositoryFetchProgress -Completed $c -Total $t -Name $n } `
         -OnProgress { param($i, $t, $n) Show-RepositoryProgress -Index $i -Total $t -Name $n } `
         -OnResult { param($r) Show-RepositorySyncResultLine -Result $r }
 
@@ -385,6 +436,8 @@ function Invoke-RepositoryHealthFlow {
         }
 
         $states = Get-WorkspaceRepositoryStates -WorkspacePath $Config.workspacePath -Refresh:$refreshed `
+            -ThrottleLimit (Get-RepositorySyncConcurrency -ConfigObject $Config) `
+            -OnFetchProgress { param($c, $t, $n) Show-RepositoryFetchProgress -Completed $c -Total $t -Name $n } `
             -OnProgress { param($i, $t, $n) Show-RepositoryProgress -Index $i -Total $t -Name $n }
 
         Clear-RepositoryProgressLine
@@ -1056,6 +1109,8 @@ function Invoke-RepositoryMaintenanceMenu {
                 if (Test-RepositoryWorkspaceReady) {
                     ShowInfo 'Refreshing GitHub state for the report...'
                     $states = @(Get-WorkspaceRepositoryStates -WorkspacePath $Config.workspacePath -Refresh `
+                        -ThrottleLimit (Get-RepositorySyncConcurrency -ConfigObject $Config) `
+                        -OnFetchProgress { param($c, $t, $n) Show-RepositoryFetchProgress -Completed $c -Total $t -Name $n } `
                         -OnProgress { param($i, $t, $n) Show-RepositoryProgress -Index $i -Total $t -Name $n })
                     Clear-RepositoryProgressLine
                     Invoke-RepositoryReportExport -States $states -Operation 'health' -Refreshed | Out-Null
@@ -1086,6 +1141,8 @@ function Invoke-UpstreamRepairWorkspaceFlow {
     ShowInfo 'Refreshing GitHub state to find broken upstreams...'
 
     $states = @(Get-WorkspaceRepositoryStates -WorkspacePath $Config.workspacePath -Refresh `
+        -ThrottleLimit (Get-RepositorySyncConcurrency -ConfigObject $Config) `
+        -OnFetchProgress { param($c, $t, $n) Show-RepositoryFetchProgress -Completed $c -Total $t -Name $n } `
         -OnProgress { param($i, $t, $n) Show-RepositoryProgress -Index $i -Total $t -Name $n })
 
     Clear-RepositoryProgressLine

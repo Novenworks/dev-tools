@@ -148,8 +148,37 @@ Output stays compact for large workspaces:
 ! Skipped: AgentBranch - origin/claude/rebuild-homepage no longer exists
 ```
 
-Progress is shown as `[42/298] Checking bella-demo...` while sync runs. A failure in one repository
+Progress is shown as `[42/298] Refreshed bella-demo` during the refresh phase and
+`[42/298] Checking bella-demo...` while repositories are inspected. A failure in one repository
 never stops the batch.
+
+### Sync speed and concurrency
+
+Sync runs in two phases:
+
+| Phase | What it does | Parallel? |
+| --- | --- | --- |
+| Refresh | `git fetch --prune` per repository | **Yes** - up to `syncConcurrency` at once |
+| Inspect and update | Classify each repository, then fast-forward what is safe | No - one at a time |
+
+Fetching is network-bound and dominates the time for a large workspace, so it runs in parallel.
+Inspection, classification and the fast-forward itself stay single-threaded, so only one repository
+is ever modified at a time and the safe-update policy is applied exactly as it is sequentially.
+Concurrency changes how long sync takes, never what it decides.
+
+`git fetch --prune` is read-only, so running several at once is safe. Each repository is still
+fetched exactly once.
+
+Set the limit in `config.json`:
+
+```json
+{ "syncConcurrency": 8 }
+```
+
+Default is 8, valid range 1-32, and **1 makes sync fully sequential** - useful on a slow or
+rate-limited connection. Configs written before this setting existed keep working and get the
+default. If the host cannot create a runspace pool, sync falls back to sequential fetching
+automatically and still produces correct results.
 
 ### Classifications
 

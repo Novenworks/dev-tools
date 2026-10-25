@@ -24,6 +24,8 @@ hundreds of repositories, including branches created by AI coding agents.
 - Diagnostic reports in the gitignored `reports/repositories/` folder (`latest.json` and a pasteable `latest.txt`)
 - Compact progress output such as `[42/298] Checking bella-demo...` for large workspaces
 - `tests/Test-Repos.ps1` — behavioral tests using throwaway Git repositories and local bare remotes, proving no local work is lost
+- Parallel remote refresh (`lib/repo-parallel.ps1`) — `dev sync` fetches several repositories at once, so a workspace of hundreds is no longer bound by one network round trip at a time
+- Optional `syncConcurrency` setting (default 8, range 1–32, 1 = fully sequential)
 
 ### Changed
 
@@ -33,6 +35,8 @@ hundreds of repositories, including branches created by AI coding agents.
 - `Get-RepoStatusDetails` keeps its shape but is now a projection of the shared state model
 - Main menu now has 16 options; Quick Actions surfaces Repository Health, Sync, and Repository Maintenance
 - Sync refreshes remote state with `git fetch --prune` before classifying; Repository Health opens with a fast local read and refreshes on request
+- Sync now runs in two phases: a parallel read-only refresh, then sequential inspection and fast-forward. Only the fetch is concurrent, so one repository is modified at a time and concurrency cannot change what sync decides
+- A repository is never fetched twice: the prefetched result is passed into the facts gatherer
 
 ### Fixed
 
