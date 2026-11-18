@@ -17,6 +17,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Run DevRepo tests
-        shell: ${{ matrix.shell }}
+      - name: Run DevRepo tests in PowerShell 7
+        if: matrix.shell == 'pwsh'
+        shell: pwsh
+        run: ./tests/Test-DevTools.ps1
+
+      - name: Run DevRepo tests in Windows PowerShell 5.1
+        if: matrix.shell == 'powershell'
+        shell: powershell
         run: ./tests/Test-DevTools.ps1
