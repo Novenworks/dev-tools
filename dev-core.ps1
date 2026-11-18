@@ -9,7 +9,6 @@ param(
 
 $script:DevToolsRoot = $PSScriptRoot
 $DevToolsRoot = $script:DevToolsRoot
-$script:DevToolsCommandArgs = @($CommandArgs)
 
 . (Join-Path $DevToolsRoot 'lib\utils.ps1')
 . (Join-Path $DevToolsRoot 'lib\copy.ps1')
@@ -37,6 +36,7 @@ $script:DevToolsCommandArgs = @($CommandArgs)
 . (Join-Path $DevToolsRoot 'lib\repo-ui.ps1')
 . (Join-Path $DevToolsRoot 'lib\test.ps1')
 . (Join-Path $DevToolsRoot 'lib\self.ps1')
+. (Join-Path $DevToolsRoot 'lib/automation.ps1')
 
 if ($Command -eq 'home' -and $CommandArgs.Count -eq 1 -and $CommandArgs[0] -in @('--help', '-h')) {
     $Command = 'help'
@@ -49,6 +49,29 @@ $commandFiles = @{
     clone = 'clone'; sync = 'sync'; update = 'sync'; status = 'status'
     backup = 'backup'; open = 'open'; deploy = 'deploy'; help = 'help'
     '--help' = 'help'; '-h' = 'help'
+}
+
+$listedProjects = $false
+if ($CommandArgs.Count -gt 0) {
+    $subcommand = $CommandArgs[0]
+    if ($Command -eq 'projects' -and $subcommand -in @('list', 'open', 'info')) {
+        $listedProjects = $subcommand -eq 'list'
+        $Command = if ($listedProjects) { 'projects list' } else { $subcommand }
+        $CommandArgs = @($CommandArgs | Select-Object -Skip 1)
+    }
+    elseif ($Command -eq 'repos' -and $subcommand -in @('status', 'sync', 'clone')) {
+        $Command = $subcommand
+        $CommandArgs = @($CommandArgs | Select-Object -Skip 1)
+    }
+}
+
+$script:DevToolsCommandArgs = @($CommandArgs)
+$json = '--json' -in $CommandArgs
+if ($listedProjects -or $json -or '--no-interactive' -in $CommandArgs -or '--dry-run' -in $CommandArgs) {
+    $name = if ($Command -and $commandFiles.ContainsKey($Command)) { $commandFiles[$Command] } else { $Command }
+    $result = Get-DevRepoAutomationResult -Name $name -Options $CommandArgs
+    Write-DevRepoAutomationResult -Envelope $result.Envelope -Json:$json
+    exit $result.ExitCode
 }
 
 if (-not $Command -or -not $commandFiles.ContainsKey($Command)) {

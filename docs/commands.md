@@ -81,6 +81,42 @@ Includes Home, Quick Actions, Recent Projects, Project Info, Doctor, Configure, 
 
 ---
 
+## Automation
+
+Use `devrepo status --json`, `devrepo doctor --json`, `devrepo projects list --json` or `devrepo sync --dry-run --json` for one JSON result on stdout. JSON mode implies no prompts. Use `--no-interactive` for a text result on supported commands. `devrepo projects list` also works without a flag.
+
+The sync preview inspects the local checkouts and the last known remote-tracking refs. It performs no fetch, merge, clone, or report write. A preview can go out of date after changes to the local workspace or remote. `devrepo sync` and `devrepo update` still use the interactive approval flow for actual changes.
+
+The grouped forms `projects open`, `projects info`, `repos status`, `repos sync` and `repos clone` route to the same commands as their flat forms.
+
+| Envelope field | Meaning |
+| --- | --- |
+| `schemaVersion` | Integer version, currently `1`. |
+| `command` | Canonical operation, such as `sync` for `update`. |
+| `timestamp` | UTC timestamp for the command invocation, in ISO 8601 format. |
+| `success` | Whether the command collected the requested data. Setup or Git issues can appear in a successful check. |
+| `data` | Command-specific object, or `null` when the command could not run. |
+| `warnings` | Array of human-readable strings. |
+| `errors` | Array of objects with a stable `code` and human-readable `message`. |
+
+Status and sync preview return `workspace`, `refreshed`, `dryRun`, `summary` and `repositories`. Preview adds `plannedAction` to each repository. Values are `fast_forward`, `current` or `skip`. Doctor returns `overallStatus`, `required` and `optional`. Project listing returns `workspace`, `count` and `projects`, where each project has a `name`, `path` and `isGit` flag.
+
+Automation exit codes:
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Success |
+| 2 | Invalid arguments or unsupported automation mode |
+| 3 | Authentication required (reserved for remote automation commands) |
+| 4 | Configuration failure |
+| 5 | Missing dependency |
+| 6 | Network failure (reserved for remote automation commands) |
+| 7 | A mutation requires interactive approval |
+| 8 | Partial success with some repositories unavailable |
+| 9 | Internal error |
+
+Existing interactive commands keep their command-specific exit behavior.
+
 ## Setup and configuration
 
 | Command | Description |

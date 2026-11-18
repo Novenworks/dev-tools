@@ -25,5 +25,11 @@ ShowInfo 'devrepo self            Manage your DevRepo installation'
 ShowInfo 'devrepo test            Run automated validation'
 ShowInfo 'Use arrows and Enter on supported menus, or type a shortcut. Esc or Back returns.'
 
+ShowSection -Label 'Automation'
+ShowInfo 'devrepo status --json          Local Git status as JSON'
+ShowInfo 'devrepo doctor --json          Setup checks as JSON'
+ShowInfo 'devrepo projects list --json   List workspace folders as JSON'
+ShowInfo 'devrepo sync --dry-run         Preview updates using local tracking refs'
+
 ShowSection -Label 'Command reference'
 ShowInfo "$(Get-DevToolsRepositoryUrl)/blob/main/docs/commands.md"
