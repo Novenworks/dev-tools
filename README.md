@@ -125,11 +125,9 @@ The installer adds both launchers to your **user PATH**. Open `devrepo` and save
 
 Close and reopen PowerShell after installation so the updated PATH takes effect.
 
-### Why `devrepo.cmd`?
+### Windows launchers
 
-The global `dev` command resolves to `dev.cmd`, not a root-level `dev.ps1`. The CMD launcher runs PowerShell with `-NoProfile` and `-ExecutionPolicy Bypass`, so you should not see execution policy errors after installation.
-
-The real PowerShell entrypoint is `dev-core.ps1`. Do not run it directly as your daily workflow; use `dev` or `.\devrepo.cmd`.
+`devrepo.cmd` is the primary launcher. The legacy `dev.cmd` calls the same PowerShell entry point and accepts the same commands. Both launchers run with `-NoProfile` and `-ExecutionPolicy Bypass`.
 
 ### Run locally without installing
 

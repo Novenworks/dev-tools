@@ -67,17 +67,14 @@ devrepo self path
 
 ## Home
 
-- [ ] Home dashboard loads
-- [ ] Workspace displayed
-- [ ] GitHub owners displayed
-- [ ] Repository count displayed
-- [ ] System Status displayed
-- [ ] When all required checks pass, shows **Ready to Build**
-- [ ] When ready, shows “Everything required is ready.” (no parameter errors)
-- [ ] Status icons render without errors (emoji or ASCII fallback)
-- [ ] Recent Projects section appears after opening a project
-- [ ] Press **O** opens recent project picker when recents exist
-- [ ] Menu options respond correctly
+- [ ] Both `devrepo` and legacy `dev` open the same Home dashboard from another directory
+- [ ] A clean install opens setup, and canceling setup leaves settings unsaved
+- [ ] Home displays the workspace and checks Git, GitHub sign-in and the configured editor
+- [ ] A workspace with a regular folder and a Git checkout shows two projects and one assessed Git project
+- [ ] Arrow keys move the focus, Enter selects it, shortcuts open the right action, and Esc returns
+- [ ] The fallback host accepts typed shortcuts and `Back`
+- [ ] `DEVTOOLS_ASCII=1` works on detailed screens
+- [ ] Opening a project adds it to Recently opened, accessible with **6** or **O**
 
 **Command:**
 
@@ -137,8 +134,10 @@ devrepo self path
 
 ## Repositories
 
-- [ ] Clone works
-- [ ] `devrepo sync` refreshes remote state and shows compact per-repository lines
+- [ ] Download preview counts missing folders and existing folders. Cancel creates no project folders
+- [ ] Confirmed downloads leave existing folders alone and show verified download counts
+- [ ] Canceling `devrepo sync` leaves local checkouts and tracking refs unchanged
+- [ ] Confirmed `devrepo sync` refreshes remote state and shows compact per-repository lines
 - [ ] `devrepo update` still works and behaves the same as `devrepo sync`
 - [ ] Progress shows `[n/total] Refreshed <name>` while fetching, then `[n/total] Checking <name>...`, and never looks frozen
 - [ ] Sync is noticeably faster than a sequential run (`"syncConcurrency": 1` in `config.json` to compare)
@@ -161,6 +160,14 @@ devrepo self path
 .\devrepo.cmd status
 .\devrepo.cmd backup
 ```
+
+## Automation
+
+- [ ] `devrepo status --json` and `dev status --json` emit one equivalent schema v1 object
+- [ ] `devrepo doctor --json` reports setup without opening any prompts
+- [ ] `devrepo projects list --json` matches the actual workspace
+- [ ] `devrepo sync --dry-run --json` leaves refs and working trees unchanged
+- [ ] `devrepo sync --json` exits with code 7 and reports `unsafe_operation`
 
 ---
 
