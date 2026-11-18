@@ -83,9 +83,19 @@ try {
         throw 'Repository status contract is invalid.'
     }
 
-    $output = & $engine -NoProfile -ExecutionPolicy Bypass -File $core status --no-interactive 2>$null
-    if ($LASTEXITCODE -ne 0) { throw 'Text status failed.' }
+    # Windows PowerShell can wrap redirected native stderr in an ErrorRecord.
+    $previousErrorAction = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $output = & $engine -NoProfile -ExecutionPolicy Bypass -File $core status --no-interactive 2>&1
+        $statusExitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorAction
+    }
+    if ($statusExitCode -ne 0) { throw 'Text status failed.' }
     Assert-Output $output '1 Git projects'
+    Assert-Output $output 'Repository data uses local tracking refs'
 
     $repoPath = Join-Path $workspace 'Repository'
     & git -C $repoPath remote add origin 'file:///missing-devrepo-fixture'
