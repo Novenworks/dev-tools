@@ -1,4 +1,4 @@
-# dev deploy — Deployment Manager.
+# devrepo deploy — Deployment Manager.
 #
 # audit, plan, verify, and status are read-only. Only sync can change anything,
 # and only after an explicit confirmation (or the deliberate --apply flag).

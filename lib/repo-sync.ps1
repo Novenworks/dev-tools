@@ -73,7 +73,7 @@ function Get-RepositorySkipReason {
     .SYNOPSIS
         Turns a repository state into a short, actionable skip reason. Pure function.
     .DESCRIPTION
-        DevTools never reports "Could not update" when it knows the real reason.
+        DevRepo never reports "Could not update" when it knows the real reason.
     #>
     param([Parameter(Mandatory = $true)]$State)
 
@@ -236,7 +236,7 @@ function Invoke-RepositorySync {
             $fallback.GitError = $_.Exception.Message
             $fallbackState = Get-RepositoryState -Facts $fallback
             $result = New-RepositorySyncResult -State $fallbackState -Outcome 'Failed' `
-                -Reason 'DevTools could not inspect this repository' `
+                -Reason 'DevRepo could not inspect this repository' `
                 -GitError $_.Exception.Message
         }
 

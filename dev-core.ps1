@@ -1,4 +1,4 @@
-# DevTools — manage local GitHub workspaces on Windows
+# DevRepo by Novenworks
 
 param(
     [Parameter(Position = 0)]
@@ -38,48 +38,56 @@ $script:DevToolsCommandArgs = @($CommandArgs)
 . (Join-Path $DevToolsRoot 'lib\test.ps1')
 . (Join-Path $DevToolsRoot 'lib\self.ps1')
 
-$configSetup = Initialize-DevToolsConfig
-$script:FirstRun = $configSetup.Created
-
-try {
-    $Config = Get-DevToolsConfig
-}
-catch {
-    if ($script:FirstRun) {
-        $Config = Get-DefaultDevToolsConfig
-    }
-    else {
-        ShowError $_.Exception.Message
-        ShowInfo 'Run: dev configure'
-        exit 1
-    }
+if ($Command -eq 'home' -and $CommandArgs.Count -eq 1 -and $CommandArgs[0] -in @('--help', '-h')) {
+    $Command = 'help'
 }
 
-$commandName = $Command.ToLower()
-
-if ($script:FirstRun -and $commandName -notin @('self', 'test')) {
-    . (Join-Path $DevToolsRoot 'commands\configure.ps1')
-    $Config = Set-ScriptConfig
-    $script:FirstRun = $false
-    . (Join-Path $DevToolsRoot 'commands\home.ps1')
-    exit 0
+$commandFiles = @{
+    home = 'home'; menu = 'menu'; quick = 'quick'; recent = 'recent'
+    info = 'info'; repos = 'repos'; test = 'test'; self = 'self'
+    configure = 'configure'; settings = 'settings'; doctor = 'doctor'
+    clone = 'clone'; sync = 'sync'; update = 'sync'; status = 'status'
+    backup = 'backup'; open = 'open'; deploy = 'deploy'; help = 'help'
+    '--help' = 'help'; '-h' = 'help'
 }
 
-$commandFile = Join-Path $DevToolsRoot "commands\$commandName.ps1"
-
-if (-not (Test-Path $commandFile)) {
+if (-not $Command -or -not $commandFiles.ContainsKey($Command)) {
     ShowError "Unknown command: $Command"
-    ShowInfo 'Valid commands: home, menu, quick, recent, info, repos, test, self, configure, settings, doctor, clone, sync, update, status, backup, open, deploy, help'
+    ShowInfo 'Run devrepo help for available commands.'
     exit 1
 }
 
-if ($commandName -eq 'home' -and -not $script:FirstRun) {
-    . (Join-Path $DevToolsRoot 'commands\home.ps1')
-    exit 0
+$commandName = $commandFiles[$Command]
+$script:FirstRun = -not (Test-DevToolsConfigFileExists)
+try {
+    $Config = if ($script:FirstRun -or $commandName -eq 'help') {
+        Get-DefaultDevToolsConfig
+    }
+    else {
+        Get-DevToolsConfig
+    }
+}
+catch {
+    if ($commandName -ne 'configure') {
+        ShowError $_.Exception.Message
+        ShowInfo 'Run devrepo configure to review your settings.'
+        exit 1
+    }
+    $Config = Get-DefaultDevToolsConfig
 }
 
-. $commandFile
+if ($script:FirstRun -and $commandName -in @('home', 'menu', 'quick', 'configure', 'settings')) {
+    . (Join-Path $DevToolsRoot 'commands/configure.ps1')
+    if ($script:FirstRun -or $commandName -in @('configure', 'settings')) { exit 0 }
+}
+elseif ($script:FirstRun -and $commandName -in @('clone', 'sync', 'backup', 'deploy')) {
+    ShowWarning 'Set up your workspace before making changes.'
+    ShowInfo 'Run devrepo configure, then retry the command.'
+    exit 1
+}
 
-if ($commandName -notin @('home', 'menu', 'configure', 'settings', 'quick', 'test', 'self', 'deploy', 'status', 'repos')) {
+. (Join-Path $DevToolsRoot "commands/$commandName.ps1")
+
+if ($commandName -notin @('home', 'menu', 'configure', 'settings', 'quick', 'test', 'self', 'deploy', 'status', 'repos', 'help')) {
     Wait-ForKey
 }

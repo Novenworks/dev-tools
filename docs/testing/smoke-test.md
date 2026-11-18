@@ -1,4 +1,4 @@
-# DevTools Smoke Test Checklist
+# DevRepo Smoke Test Checklist
 
 Run this checklist before publishing any GitHub Release.
 
@@ -23,7 +23,7 @@ Run this checklist before publishing any GitHub Release.
 
 ## Launch
 
-- [ ] DevTools starts successfully
+- [ ] DevRepo starts successfully
 - [ ] Home screen loads
 - [ ] Header displays correctly
 - [ ] No parser errors
@@ -34,7 +34,7 @@ Run this checklist before publishing any GitHub Release.
 
 ```powershell
 cd C:\Projects\dev-tools
-.\dev.cmd
+.\devrepo.cmd
 ```
 
 ---
@@ -44,7 +44,7 @@ cd C:\Projects\dev-tools
 - [ ] `powershell -ExecutionPolicy Bypass -File install.ps1` completes successfully
 - [ ] Post-install validation shows dev.cmd, dev-core.ps1, and user PATH
 - [ ] After reopening PowerShell, `dev` works from any directory
-- [ ] `dev self path` shows safe resolution to dev.cmd
+- [ ] `devrepo self path` shows safe resolution to dev.cmd
 - [ ] No execution policy error when running global `dev`
 
 **Install flow:**
@@ -58,9 +58,9 @@ powershell -ExecutionPolicy Bypass -File install.ps1
 Close and reopen PowerShell, then:
 
 ```powershell
-dev
-dev test
-dev self path
+devrepo
+devrepo test
+devrepo self path
 ```
 
 ---
@@ -82,7 +82,7 @@ dev self path
 **Command:**
 
 ```powershell
-.\dev.cmd home
+.\devrepo.cmd home
 ```
 
 ---
@@ -98,7 +98,7 @@ dev self path
 **Command:**
 
 ```powershell
-.\dev.cmd configure
+.\devrepo.cmd configure
 ```
 
 ---
@@ -113,7 +113,7 @@ dev self path
 **Command:**
 
 ```powershell
-.\dev.cmd settings
+.\devrepo.cmd settings
 ```
 
 ---
@@ -130,7 +130,7 @@ dev self path
 **Command:**
 
 ```powershell
-.\dev.cmd doctor
+.\devrepo.cmd doctor
 ```
 
 ---
@@ -138,8 +138,8 @@ dev self path
 ## Repositories
 
 - [ ] Clone works
-- [ ] `dev sync` refreshes remote state and shows compact per-repository lines
-- [ ] `dev update` still works and behaves the same as `dev sync`
+- [ ] `devrepo sync` refreshes remote state and shows compact per-repository lines
+- [ ] `devrepo update` still works and behaves the same as `devrepo sync`
 - [ ] Progress shows `[n/total] Refreshed <name>` while fetching, then `[n/total] Checking <name>...`, and never looks frozen
 - [ ] Sync is noticeably faster than a sequential run (`"syncConcurrency": 1` in `config.json` to compare)
 - [ ] Setting `"syncConcurrency": 1` still produces the same per-repository results, just slower
@@ -147,7 +147,7 @@ dev self path
 - [ ] Skipped repositories give a real reason, never "could not update"
 - [ ] The sync summary counts add up to the repository total
 - [ ] "Review repositories needing attention" shows explanation, work-safety note, and next step
-- [ ] `dev status` opens Repository Health on the repositories needing attention
+- [ ] `devrepo status` opens Repository Health on the repositories needing attention
 - [ ] Filters 1-8 work, D shows details, R refreshes, E exports a report
 - [ ] Backup prompts before committing
 - [ ] Backup completes successfully
@@ -155,18 +155,18 @@ dev self path
 **Commands:**
 
 ```powershell
-.\dev.cmd clone
-.\dev.cmd sync
-.\dev.cmd update
-.\dev.cmd status
-.\dev.cmd backup
+.\devrepo.cmd clone
+.\devrepo.cmd sync
+.\devrepo.cmd update
+.\devrepo.cmd status
+.\devrepo.cmd backup
 ```
 
 ---
 
 ## Repository Maintenance
 
-- [ ] `dev repos` opens the maintenance menu
+- [ ] `devrepo repos` opens the maintenance menu
 - [ ] Repair broken upstreams finds repositories whose remote branch was deleted
 - [ ] A branch with unmerged commits is refused, with the reason shown
 - [ ] A safe repair switches to the default branch and keeps the old branch on disk
@@ -186,7 +186,7 @@ dev self path
 **Command:**
 
 ```powershell
-.\dev.cmd repos
+.\devrepo.cmd repos
 ```
 
 ---
@@ -203,8 +203,8 @@ dev self path
 **Command:**
 
 ```powershell
-.\dev.cmd open
-.\dev.cmd open walkreplay
+.\devrepo.cmd open
+.\devrepo.cmd open walkreplay
 ```
 
 ---
@@ -220,7 +220,7 @@ dev self path
 **Command:**
 
 ```powershell
-.\dev.cmd recent
+.\devrepo.cmd recent
 ```
 
 ---
@@ -236,8 +236,8 @@ dev self path
 **Commands:**
 
 ```powershell
-.\dev.cmd info
-.\dev.cmd info walkreplay
+.\devrepo.cmd info
+.\devrepo.cmd info walkreplay
 ```
 
 ---
@@ -248,34 +248,34 @@ Vercel is optional. Run this section only when you use Deployment Manager.
 
 **Without a Vercel token:**
 
-- [ ] `dev doctor` still reports the same overall status (Vercel does not make DevTools "not ready")
+- [ ] `devrepo doctor` still reports the same overall status (Vercel does not make DevRepo "not ready")
 - [ ] Doctor shows `Vercel authentication  AUTH REQUIRED` with setup instructions
 - [ ] No token value appears anywhere on screen
 
 **With `$env:VERCEL_TOKEN` set:**
 
-- [ ] `dev deploy` menu opens and every option returns cleanly
-- [ ] `dev deploy status` shows provider, team, owners, and include patterns
-- [ ] `dev deploy audit` completes and creates **nothing**
+- [ ] `devrepo deploy` menu opens and every option returns cleanly
+- [ ] `devrepo deploy status` shows provider, team, owners, and include patterns
+- [ ] `devrepo deploy audit` completes and creates **nothing**
 - [ ] Audit table stays readable with long repository names
-- [ ] `dev deploy plan` lists proposed creations and ends with `NO CHANGES HAVE BEEN MADE.`
-- [ ] `dev deploy sync` shows the plan and asks `Continue? [y/N]`
+- [ ] `devrepo deploy plan` lists proposed creations and ends with `NO CHANGES HAVE BEEN MADE.`
+- [ ] `devrepo deploy sync` shows the plan and asks `Continue? [y/N]`
 - [ ] Answering `n` (or pressing Enter) creates nothing
-- [ ] `dev deploy verify` completes and creates nothing
+- [ ] `devrepo deploy verify` completes and creates nothing
 - [ ] `reports/deployments/latest.json` is written and contains no token
 - [ ] `git status` shows no new tracked files from the audit
 
 **Commands:**
 
 ```powershell
-.\dev.cmd deploy
-.\dev.cmd deploy status
-.\dev.cmd deploy audit
-.\dev.cmd deploy plan
-.\dev.cmd deploy verify
+.\devrepo.cmd deploy
+.\devrepo.cmd deploy status
+.\devrepo.cmd deploy audit
+.\devrepo.cmd deploy plan
+.\devrepo.cmd deploy verify
 ```
 
-Do **not** run `dev deploy sync` to completion during a smoke test unless you intend to create real Vercel projects.
+Do **not** run `devrepo deploy sync` to completion during a smoke test unless you intend to create real Vercel projects.
 
 ---
 
@@ -294,14 +294,14 @@ Do **not** run `dev deploy sync` to completion during a smoke test unless you in
 **Commands:**
 
 ```powershell
-.\dev.cmd home
-.\dev.cmd menu
-.\dev.cmd quick
-.\dev.cmd recent
-.\dev.cmd info
-.\dev.cmd deploy
-.\dev.cmd help
-.\dev.cmd settings
+.\devrepo.cmd home
+.\devrepo.cmd menu
+.\devrepo.cmd quick
+.\devrepo.cmd recent
+.\devrepo.cmd info
+.\devrepo.cmd deploy
+.\devrepo.cmd help
+.\devrepo.cmd settings
 ```
 
 ---
@@ -371,6 +371,6 @@ Do not publish the release until critical failures are resolved or explicitly de
 
 ## Future Automation
 
-Future versions of DevTools may automate parts of this checklist using GitHub Actions and PowerShell validation.
+Future versions of DevRepo may automate parts of this checklist using GitHub Actions and PowerShell validation.
 
 For now, this checklist is the official release validation process.

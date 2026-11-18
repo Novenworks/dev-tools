@@ -62,14 +62,21 @@ function Get-DevToolsPathInstallState {
 }
 
 function Get-DevToolsCommandResolution {
-    $commands = @(Get-Command -Name 'dev' -CommandType Application -ErrorAction SilentlyContinue -All)
+    param([ValidateSet('devrepo', 'dev')][string]$Name = 'dev')
+
+    $commands = @(Get-Command -Name $Name -ErrorAction SilentlyContinue -All |
+        Where-Object { $_.CommandType -in @('Application', 'ExternalScript', 'Alias', 'Function') })
 
     return @(
         $commands |
             ForEach-Object {
                 $source = $_.Source
-                $commandRoot = ConvertTo-NormalizedDirectoryPath -Path (Split-Path -Parent $source)
-                $isDevTools = (Test-DevToolsInstallationRoot -Path $commandRoot)
+                if ([string]::IsNullOrWhiteSpace($source)) { $source = $_.Name }
+                $commandRoot = $null
+                if ($_.CommandType -in @('Application', 'ExternalScript')) {
+                    $commandRoot = ConvertTo-NormalizedDirectoryPath -Path (Split-Path -Parent $source)
+                }
+                $isDevTools = $commandRoot -and (Test-DevToolsInstallationRoot -Path $commandRoot)
 
                 [pscustomobject]@{
                     Source     = $source
@@ -110,7 +117,7 @@ function Get-DevToolsEarlierPathConflicts {
 
         $entry = ConvertTo-NormalizedDirectoryPath -Path $entries[$index]
 
-        foreach ($commandName in @('dev.cmd', 'dev.ps1', 'dev.exe', 'dev.bat')) {
+        foreach ($commandName in @('devrepo.cmd', 'devrepo.ps1', 'devrepo.exe', 'devrepo.bat', 'dev.cmd', 'dev.ps1', 'dev.exe', 'dev.bat')) {
             $commandPath = Join-Path $entry $commandName
 
             if (Test-Path -LiteralPath $commandPath) {
@@ -129,10 +136,11 @@ function Get-DevToolsEarlierPathConflicts {
 
 function Test-DevToolsCommandResolvesSafely {
     param(
-        [Parameter(Mandatory = $true)][string]$Root
+        [Parameter(Mandatory = $true)][string]$Root,
+        [ValidateSet('devrepo', 'dev')][string]$Name = 'dev'
     )
 
-    $commands = @(Get-DevToolsCommandResolution)
+    $commands = @(Get-DevToolsCommandResolution -Name $Name)
     $normalizedRoot = ConvertTo-NormalizedDirectoryPath -Path $Root
 
     if ($commands.Count -eq 0) {
@@ -154,8 +162,8 @@ function Test-DevToolsConflictingDevCommand {
     $normalizedRoot = ConvertTo-NormalizedDirectoryPath -Path $Root
     $conflicts = @()
 
-    foreach ($command in Get-DevToolsCommandResolution) {
-        if ($command.Root -eq $normalizedRoot) {
+    foreach ($command in @((Get-DevToolsCommandResolution -Name devrepo) + (Get-DevToolsCommandResolution -Name dev))) {
+        if ($command.Root -eq $normalizedRoot -and $command.Extension -eq '.cmd') {
             continue
         }
 
@@ -216,10 +224,11 @@ function Test-DevToolsInstallValidation {
     )
 
     $checks = @(
-        [pscustomobject]@{ Label = 'DevTools root exists'; Passed = (Test-Path -LiteralPath $Root) }
+        [pscustomobject]@{ Label = 'DevRepo root exists'; Passed = (Test-Path -LiteralPath $Root) }
+        [pscustomobject]@{ Label = 'devrepo.cmd exists'; Passed = (Test-Path -LiteralPath (Join-Path $Root 'devrepo.cmd')) }
         [pscustomobject]@{ Label = 'dev.cmd exists'; Passed = (Test-Path -LiteralPath (Join-Path $Root 'dev.cmd')) }
         [pscustomobject]@{ Label = 'dev-core.ps1 exists'; Passed = (Test-Path -LiteralPath (Join-Path $Root 'dev-core.ps1')) }
-        [pscustomobject]@{ Label = 'User PATH contains DevTools root'; Passed = (Test-DevToolsRootInUserPath -Root $Root) }
+        [pscustomobject]@{ Label = 'User PATH contains DevRepo root'; Passed = (Test-DevToolsRootInUserPath -Root $Root) }
     )
 
     return @($checks)
@@ -231,12 +240,18 @@ function Invoke-DevToolsInstallScript {
     )
 
     Write-Host ''
-    Write-Host 'Installing DevTools...' -ForegroundColor Cyan
+    Write-Host 'Installing DevRepo...' -ForegroundColor Cyan
     Write-Host ''
 
     $normalizedRoot = ConvertTo-NormalizedDirectoryPath -Path $Root
     $devCmdPath = Join-Path $normalizedRoot 'dev.cmd'
     $devCorePath = Join-Path $normalizedRoot 'dev-core.ps1'
+    $primaryLauncher = Join-Path $normalizedRoot 'devrepo.cmd'
+
+    if (-not (Test-Path -LiteralPath $primaryLauncher)) {
+        Write-Host "Missing required launcher: $primaryLauncher" -ForegroundColor Red
+        return 1
+    }
 
     if (-not (Test-Path -LiteralPath $devCmdPath)) {
         Write-Host "Missing required launcher: $devCmdPath" -ForegroundColor Red
@@ -248,17 +263,8 @@ function Invoke-DevToolsInstallScript {
         return 1
     }
 
-    $configPath = Join-Path $normalizedRoot 'config.json'
-    $examplePath = Join-Path $normalizedRoot 'config.example.json'
-
-    if (-not (Test-Path -LiteralPath $configPath) -and (Test-Path -LiteralPath $examplePath)) {
-        Copy-Item -Path $examplePath -Destination $configPath
-        Write-Host 'Created config.json from config.example.json.' -ForegroundColor Yellow
-        Write-Host ''
-    }
-
     if (Test-DevToolsRootInUserPath -Root $normalizedRoot) {
-        Write-Host 'DevTools is already installed on your user PATH.' -ForegroundColor Green
+        Write-Host 'DevRepo is already installed on your user PATH.' -ForegroundColor Green
         Write-Host "Location: $normalizedRoot" -ForegroundColor DarkGray
         Write-Host ''
     }
@@ -267,7 +273,7 @@ function Invoke-DevToolsInstallScript {
         $commandConflicts = @(Test-DevToolsConflictingDevCommand -Root $normalizedRoot)
 
         if ($pathConflicts.Count -gt 0 -or $commandConflicts.Count -gt 0) {
-            Write-Host 'Warning: another dev command appears earlier on your PATH.' -ForegroundColor Yellow
+            Write-Host 'Warning: another devrepo or dev command appears earlier on your PATH.' -ForegroundColor Yellow
             Write-Host ''
 
             foreach ($conflict in $pathConflicts) {
@@ -279,8 +285,8 @@ function Invoke-DevToolsInstallScript {
             }
 
             Write-Host ''
-            Write-Host 'DevTools will still be added to your user PATH.' -ForegroundColor DarkGray
-            Write-Host 'If another dev command comes first, type dev self path after reopening PowerShell.' -ForegroundColor DarkGray
+            Write-Host 'DevRepo will still be added to your user PATH.' -ForegroundColor DarkGray
+            Write-Host 'If another devrepo or dev command comes first, type devrepo self path after reopening PowerShell.' -ForegroundColor DarkGray
             Write-Host ''
         }
 
@@ -301,13 +307,14 @@ function Invoke-DevToolsInstallScript {
     }
 
     Write-Host ''
-    Write-Host 'DevTools installed successfully.' -ForegroundColor Green
+    Write-Host 'DevRepo installed successfully.' -ForegroundColor Green
     Write-Host ''
     Write-Host 'Close and reopen PowerShell, then run:' -ForegroundColor DarkGray
     Write-Host ''
-    Write-Host '  dev' -ForegroundColor Cyan
+    Write-Host '  devrepo' -ForegroundColor Cyan
+    Write-Host '  dev remains supported.' -ForegroundColor DarkGray
     Write-Host ''
-    Write-Host 'Run dev self path if the global dev command does not resolve correctly.' -ForegroundColor DarkGray
+    Write-Host 'Run devrepo self path if the global dev command does not resolve correctly.' -ForegroundColor DarkGray
     Write-Host ''
 
     return 0
@@ -317,21 +324,26 @@ function Invoke-DevToolsSelfInstall {
     $root = Get-DevToolsRoot
 
     if (-not $root) {
-        ShowError 'Unable to determine the DevTools installation root.'
+        ShowError 'Unable to determine the DevRepo installation root.'
         return 1
     }
 
     $devCmdPath = Join-Path $root 'dev.cmd'
     $devCorePath = Join-Path $root 'dev-core.ps1'
+    $primaryLauncher = Join-Path $root 'devrepo.cmd'
+    if (-not (Test-Path -LiteralPath $primaryLauncher)) {
+        ShowError "Missing required launcher: $primaryLauncher"
+        return 1
+    }
 
     if (-not (Test-Path -LiteralPath $devCmdPath)) {
-        ShowError 'This DevTools installation appears incomplete.'
+        ShowError 'This DevRepo installation appears incomplete.'
         ShowInfo "Missing: $devCmdPath"
         return 1
     }
 
     if (-not (Test-Path -LiteralPath $devCorePath)) {
-        ShowError 'This DevTools installation appears incomplete.'
+        ShowError 'This DevRepo installation appears incomplete.'
         ShowInfo "Missing: $devCorePath"
         return 1
     }
@@ -339,7 +351,7 @@ function Invoke-DevToolsSelfInstall {
     $conflicts = @(Test-DevToolsConflictingDevCommand -Root $root)
 
     if ($conflicts.Count -gt 0) {
-        ShowWarning 'Another dev command is already available on your PATH.'
+        ShowWarning 'Another devrepo or dev command is already available on your PATH.'
         Write-Host ''
 
         foreach ($conflict in $conflicts) {
@@ -347,13 +359,13 @@ function Invoke-DevToolsSelfInstall {
         }
 
         Write-Host ''
-        ShowInfo 'DevTools will not modify your user PATH until this is resolved.'
-        ShowInfo 'Run: dev self path'
+        ShowInfo 'DevRepo will not modify your user PATH until this is resolved.'
+        ShowInfo 'Run: devrepo self path'
         return 1
     }
 
     if (Test-DevToolsRootInUserPath -Root $root) {
-        ShowSuccess 'DevTools is already available on your PATH.'
+        ShowSuccess 'DevRepo is already available on your PATH.'
         ShowInfo "Location: $(ConvertTo-NormalizedDirectoryPath -Path $root)"
         return 0
     }
@@ -361,13 +373,13 @@ function Invoke-DevToolsSelfInstall {
     $added = Add-DevToolsRootToUserPath -Root $root
 
     if (-not $added) {
-        ShowSuccess 'DevTools is already available on your PATH.'
+        ShowSuccess 'DevRepo is already available on your PATH.'
         return 0
     }
 
     Write-Host ''
-    ShowSuccess 'DevTools was added to your user PATH.'
-    ShowInfo 'Close and reopen PowerShell, then run: dev'
+    ShowSuccess 'DevRepo was added to your user PATH.'
+    ShowInfo 'Close and reopen PowerShell, then run: devrepo'
     Write-Host ''
     return 0
 }
@@ -376,20 +388,20 @@ function Invoke-DevToolsSelfUninstall {
     $root = Get-DevToolsRoot
 
     if (-not $root) {
-        ShowError 'Unable to determine the DevTools installation root.'
+        ShowError 'Unable to determine the DevRepo installation root.'
         return 1
     }
 
     $removed = Remove-DevToolsRootFromUserPath -Root $root
 
     if (-not $removed) {
-        ShowInfo 'DevTools is not currently on your user PATH.'
+        ShowInfo 'DevRepo is not currently on your user PATH.'
         ShowInfo "Location: $(ConvertTo-NormalizedDirectoryPath -Path $root)"
         return 0
     }
 
     Write-Host ''
-    ShowSuccess 'DevTools was removed from your user PATH.'
+    ShowSuccess 'DevRepo was removed from your user PATH.'
     ShowInfo 'Close and reopen PowerShell for the change to take effect.'
     Write-Host ''
     return 0
@@ -399,64 +411,39 @@ function Invoke-DevToolsSelfPath {
     $root = Get-DevToolsRoot
 
     if (-not $root) {
-        ShowError 'Unable to determine the DevTools installation root.'
+        ShowError 'Unable to determine the DevRepo installation root.'
         return 1
     }
 
     $state = Get-DevToolsPathInstallState -Root $root
-    $commands = @(Get-DevToolsCommandResolution)
-    $devCmdCommand = Get-Command -Name 'dev.cmd' -CommandType Application -ErrorAction SilentlyContinue |
-        Select-Object -First 1
     $pathConflicts = @(Get-DevToolsEarlierPathConflicts -Root $root)
-    $resolvesSafely = Test-DevToolsCommandResolvesSafely -Root $root
 
-    ShowCommandScreen -Heading 'DevTools PATH' -Description @(
-        'Installation and PATH details for this DevTools copy.'
-        'The global dev command should resolve to dev.cmd to avoid execution policy errors.'
+    ShowCommandScreen -Heading 'DevRepo PATH' -Description @(
+        'Check where Windows finds devrepo and the legacy dev launcher.'
     )
+    ShowInfo "Installation: $($state.Root)"
+    ShowInfo "On User PATH: $($state.InUserPath)"
 
-    Write-Host 'DevTools Root' -ForegroundColor Cyan
-    Write-Host "  $(ConvertTo-NormalizedDirectoryPath -Path $state.Root)" -ForegroundColor DarkGray
-    Write-Host ''
-    Write-Host 'User PATH contains DevTools root' -ForegroundColor Cyan
-    Write-Host ("  {0}" -f $(if ($state.InUserPath) { 'Yes' } else { 'No' })) -ForegroundColor DarkGray
-    Write-Host ''
-    Write-Host 'Resolved dev command path' -ForegroundColor Cyan
-
-    if ($commands.Count -eq 0) {
-        Write-Host '  Not detected on PATH in this session.' -ForegroundColor DarkGray
-        Write-Host '  Close and reopen PowerShell after installing.' -ForegroundColor DarkGray
-    }
-    else {
-        foreach ($command in $commands) {
-            $label = if ($command.IsDevTools) { 'DevTools' } else { 'Other' }
-            Write-Host "  [$label] $($command.Source)" -ForegroundColor DarkGray
+    foreach ($name in @('devrepo', 'dev')) {
+        ShowSection -Label $name
+        $commands = @(Get-DevToolsCommandResolution -Name $name)
+        if ($commands.Count -eq 0) {
+            ShowInfo 'Unavailable in this session. Reopen PowerShell after installing.'
+            continue
         }
-    }
-
-    Write-Host ''
-    Write-Host 'Resolved dev.cmd command path' -ForegroundColor Cyan
-
-    if ($devCmdCommand -and $devCmdCommand.Source) {
-        Write-Host "  $($devCmdCommand.Source)" -ForegroundColor DarkGray
-    }
-    else {
-        Write-Host '  Not detected on PATH in this session.' -ForegroundColor DarkGray
-    }
-
-    Write-Host ''
-    Write-Host 'dev resolves safely' -ForegroundColor Cyan
-    Write-Host ("  {0}" -f $(if ($resolvesSafely) { 'Yes' } else { 'No' })) -ForegroundColor DarkGray
-
-    if (-not $resolvesSafely) {
-        Write-Host '  Expected: dev.cmd in the DevTools root folder.' -ForegroundColor DarkGray
+        foreach ($command in $commands) {
+            ShowInfo $command.Source
+        }
+        if (-not (Test-DevToolsCommandResolvesSafely -Root $root -Name $name)) {
+            ShowWarning "Expected $name.cmd from this installation first."
+        }
     }
 
     if (Test-Path -LiteralPath $state.LegacyDevPs1Path) {
         Write-Host ''
         Write-Host 'Conflicting root dev.ps1' -ForegroundColor Cyan
         Write-Host "  Found: $($state.LegacyDevPs1Path)" -ForegroundColor DarkGray
-        Write-Host '  Remove dev.ps1 from the DevTools root to avoid PowerShell preferring it over dev.cmd.' -ForegroundColor DarkGray
+        Write-Host '  Remove dev.ps1 from the DevRepo root to avoid PowerShell preferring it over dev.cmd.' -ForegroundColor DarkGray
     }
 
     if ($pathConflicts.Count -gt 0) {
@@ -480,7 +467,7 @@ function Invoke-DevToolsSelfVersion {
     $root = Get-DevToolsRoot
 
     ShowCommandScreen -Heading (Get-ProductName) -Description @(
-        'Version information for this DevTools installation.'
+        'Version information for this DevRepo installation.'
     )
 
     Write-Host 'Version' -ForegroundColor Cyan
@@ -604,8 +591,8 @@ function Invoke-DevToolsSelfInfo {
         $null
     }
 
-    ShowCommandScreen -Heading 'DevTools Self Info' -Description @(
-        'Installation details for this DevTools copy.'
+    ShowCommandScreen -Heading 'DevRepo Self Info' -Description @(
+        'Installation details for this DevRepo copy.'
     )
 
     Write-Host 'Installation Path' -ForegroundColor Cyan
@@ -635,13 +622,14 @@ function Invoke-DevToolsSelfInfo {
 function Invoke-DevToolsSelfDoctor {
     $root = Get-DevToolsRoot
 
-    ShowCommandScreen -Heading 'DevTools Self Doctor' -Description @(
-        'Checks this DevTools installation itself.'
-        'This is different from dev doctor, which checks your development environment.'
+    ShowCommandScreen -Heading 'DevRepo Self Doctor' -Description @(
+        'Checks this DevRepo installation itself.'
+        'This is different from devrepo doctor, which checks your development environment.'
     )
 
     $checks = @(
-        [pscustomobject]@{ Label = 'DevTools root found'; Passed = [bool]$root }
+        [pscustomobject]@{ Label = 'DevRepo root found'; Passed = [bool]$root }
+        [pscustomobject]@{ Label = 'devrepo.cmd exists'; Passed = (Test-Path -LiteralPath (Join-Path $Root 'devrepo.cmd')) }
         [pscustomobject]@{ Label = 'dev.cmd exists'; Passed = [bool]($root -and (Test-Path (Join-Path $root 'dev.cmd'))) }
         [pscustomobject]@{ Label = 'dev-core.ps1 exists'; Passed = [bool]($root -and (Test-Path (Join-Path $root 'dev-core.ps1'))) }
         [pscustomobject]@{ Label = 'dev.ps1 absent (avoids PATH conflict)'; Passed = [bool]($root -and -not (Test-Path (Join-Path $root 'dev.ps1'))) }
@@ -678,18 +666,18 @@ function Invoke-DevToolsSelfUpdate {
     $root = Get-DevToolsRoot
 
     if (-not $root) {
-        ShowError 'Unable to determine the DevTools installation root.'
+        ShowError 'Unable to determine the DevRepo installation root.'
         return 1
     }
 
     if (-not (Test-CommandExists 'git')) {
-        ShowError 'Git is required to update DevTools.'
+        ShowError 'Git is required to update DevRepo.'
         return 1
     }
 
     if (-not (Test-Path (Join-Path $root '.git'))) {
-        ShowError 'This DevTools installation is not a Git repository.'
-        ShowInfo 'Updates require a Git clone of the DevTools repository.'
+        ShowError 'This DevRepo installation is not a Git repository.'
+        ShowInfo 'Updates require a Git clone of the DevRepo repository.'
         return 1
     }
 
@@ -701,24 +689,28 @@ function Invoke-DevToolsSelfUpdate {
     }
 
     if (-not [string]::IsNullOrWhiteSpace($statusResult.Output)) {
-        ShowWarning 'DevTools has local changes.'
+        ShowWarning 'DevRepo has local changes.'
         ShowInfo 'Commit or stash them before updating.'
         Write-Host ''
         return 1
     }
 
-    ShowInfo 'Pulling latest changes...'
-    $pullResult = Invoke-DevToolsGitCommand -Root $root -GitArgs @('pull')
+    ShowInfo 'This checks the remote and fast-forwards this DevRepo installation when possible.'
+    if (-not (Confirm-DevRepoAction -Label 'Check for and apply a fast-forward update')) {
+        ShowInfo 'Installation update canceled.'
+        return 0
+    }
+    $pullResult = Invoke-DevToolsGitCommand -Root $root -GitArgs @('pull', '--ff-only')
 
     if ($pullResult.ExitCode -ne 0) {
-        ShowError 'DevTools update failed.'
+        ShowError 'DevRepo update failed.'
         if (-not [string]::IsNullOrWhiteSpace($pullResult.Output)) {
             ShowInfo $pullResult.Output
         }
         return 1
     }
 
-    ShowSuccess 'DevTools updated successfully.'
+    ShowSuccess 'DevRepo updated successfully.'
     if (-not [string]::IsNullOrWhiteSpace($pullResult.Output)) {
         ShowInfo $pullResult.Output
     }
@@ -728,8 +720,8 @@ function Invoke-DevToolsSelfUpdate {
 }
 
 function Show-DevToolsSelfMenuOptions {
-    Write-Host '  1  Test DevTools'
-    Write-Host '  2  Update DevTools'
+    Write-Host '  1  Test DevRepo'
+    Write-Host '  2  Update DevRepo'
     Write-Host '  3  Version'
     Write-Host '  4  Doctor'
     Write-Host '  5  Info'
@@ -741,8 +733,8 @@ function Show-DevToolsSelfMenuOptions {
 
 function Invoke-DevToolsSelfMenu {
     while ($true) {
-        ShowCommandScreen -Heading 'DevTools Self' -Description @(
-            'Manage, inspect, and safely update this DevTools installation.'
+        ShowCommandScreen -Heading 'DevRepo Self' -Description @(
+            'Manage, inspect, and safely update this DevRepo installation.'
         )
 
         Show-DevToolsSelfMenuOptions

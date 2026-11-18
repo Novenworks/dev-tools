@@ -20,11 +20,11 @@ function Get-DeploymentStatusCatalog {
         'SKIPPED'                    = @{ Label = 'Skipped';                  Summary = 'Skipped by the deployment eligibility rules.' }
         'AMBIGUOUS_MATCH'            = @{ Label = 'Ambiguous match';          Summary = 'More than one Vercel project could belong to this repository.' }
         'AUTH_REQUIRED'              = @{ Label = 'Sign-in required';         Summary = 'Vercel authentication is required before this can be checked.' }
-        'UNKNOWN'                    = @{ Label = 'Unknown';                  Summary = 'DevTools could not determine the deployment state.' }
+        'UNKNOWN'                    = @{ Label = 'Unknown';                  Summary = 'DevRepo could not determine the deployment state.' }
         'CREATED'                    = @{ Label = 'Created';                  Summary = 'Vercel project created and connected to GitHub.' }
         'CREATED_AND_DEPLOYED'       = @{ Label = 'Created and deployed';     Summary = 'Vercel project created and production deployment succeeded.' }
-        'DEPLOYMENT_TIMEOUT'         = @{ Label = 'Deployment timed out';     Summary = 'The deployment was still running when DevTools stopped waiting.' }
-        'ACTION_FAILED'              = @{ Label = 'Action failed';            Summary = 'DevTools could not complete the requested change.' }
+        'DEPLOYMENT_TIMEOUT'         = @{ Label = 'Deployment timed out';     Summary = 'The deployment was still running when DevRepo stopped waiting.' }
+        'ACTION_FAILED'              = @{ Label = 'Action failed';            Summary = 'DevRepo could not complete the requested change.' }
     }
 }
 
@@ -73,13 +73,13 @@ function Find-VercelProjectMatch {
     .DESCRIPTION
         Priority:
           1. GitHub Git-integration metadata on the Vercel project (definitive)
-          2. Explicit mapping stored in DevTools configuration
+          2. Explicit mapping stored in DevRepo configuration
           3. A single, unambiguous normalized project-name match
           4. Otherwise the result is Ambiguous or None
 
         Normalized-name matching is deliberately conservative: when a suffixed
         sibling project also exists (for example "site-demo" and "site-demo-8lrn")
-        DevTools reports ambiguity instead of guessing, because guessing wrong
+        DevRepo reports ambiguity instead of guessing, because guessing wrong
         would attach a repository to somebody else's live project.
     #>
     param(
@@ -385,7 +385,7 @@ function Get-DeploymentActionForCandidate {
     .DESCRIPTION
         Healthy projects always return 'None'. Failures, ambiguity, branch
         mismatches, and disconnected Git integrations always return 'Review':
-        DevTools reports them and lets a human decide, rather than mutating an
+        DevRepo reports them and lets a human decide, rather than mutating an
         existing Vercel project.
     #>
     param([Parameter(Mandatory = $true)]$Candidate)

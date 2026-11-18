@@ -1,15 +1,15 @@
-# DevTools Testing
+# DevRepo Testing
 
-How DevTools is validated before release.
+How DevRepo is validated before release.
 
 ---
 
 ## Automated tests
 
-Run from the DevTools folder or globally after install:
+Run from the DevRepo folder or globally after install:
 
 ```powershell
-dev test
+devrepo test
 ```
 
 Or invoke the script directly:
@@ -33,7 +33,7 @@ powershell -ExecutionPolicy Bypass -File ./tests/Test-DevTools.ps1
 
 ## Repository intelligence tests
 
-`tests/Test-Repos.ps1` runs as part of `dev test`, and can also be run on its own:
+`tests/Test-Repos.ps1` runs as part of `devrepo test`, and can also be run on its own:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File ./tests/Test-Repos.ps1
@@ -55,7 +55,7 @@ Covered scenarios:
 - Report generation, JSON round-trip, and credential sanitization
 - Classification priority, porcelain v2 parsing, and Git error categorization
 - Output formatting, the ASCII fallback, and compact progress text
-- `dev update` compatibility and the new `dev sync` command
+- `devrepo update` compatibility and the new `devrepo sync` command
 - Sync concurrency: the setting's defaults and clamping, fetch-target selection, isolated per-repository fetch failures, and that a sequential run and a concurrent run of the same workspace produce identical outcomes
 
 **The most important assertions prove no local work is lost.** After a full bulk sync, dirty, ahead,
@@ -67,7 +67,7 @@ and fails the suite if they ever pass `reset`, `stash`, `clean`, `rebase`, `-D`,
 
 ## Deployment Manager tests
 
-`tests/Test-Deploy.ps1` runs as part of `dev test`, and can also be run on its own:
+`tests/Test-Deploy.ps1` runs as part of `devrepo test`, and can also be run on its own:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File ./tests/Test-Deploy.ps1
@@ -94,7 +94,7 @@ Estimated time: 5–10 minutes.
 
 ## Optional tools
 
-PSScriptAnalyzer adds lint checks during `dev test`. Tests pass without it.
+PSScriptAnalyzer adds lint checks during `devrepo test`. Tests pass without it.
 
 ```powershell
 Install-Module PSScriptAnalyzer -Scope CurrentUser
@@ -104,12 +104,12 @@ Install-Module PSScriptAnalyzer -Scope CurrentUser
 
 ## Self-management
 
-DevTools dogfoods its own test runner:
+DevRepo dogfoods its own test runner:
 
 ```powershell
-dev self test
-dev self doctor
-dev self path
+devrepo self test
+devrepo self doctor
+devrepo self path
 ```
 
 ---

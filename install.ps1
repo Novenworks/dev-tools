@@ -1,4 +1,4 @@
-# DevTools install script for Windows
+# DevRepo install script for Windows
 
 $ErrorActionPreference = 'Stop'
 $InstallRoot = $PSScriptRoot

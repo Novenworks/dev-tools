@@ -105,10 +105,10 @@ function ConvertTo-RepositoryReportText {
     param([Parameter(Mandatory = $true)]$Report)
 
     $lines = @()
-    $lines += "# DevTools Repository Report"
+    $lines += "# DevRepo Repository Report"
     $lines += ''
     $lines += "Generated: $($Report.generatedAt)"
-    $lines += "DevTools: v$($Report.devToolsVersion)"
+    $lines += "DevRepo: v$($Report.devToolsVersion)"
     $lines += "Operation: $($Report.operation)"
     $lines += "Workspace: $($Report.workspacePath)"
     $lines += "Remote refreshed: $(if ($Report.remoteRefreshed) { 'yes' } else { 'no' })"

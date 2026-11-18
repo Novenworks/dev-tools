@@ -301,7 +301,7 @@ function Invoke-ProjectInfoFlow {
             $project = $results[0]
         }
         else {
-            ShowCommandScreen -Heading 'Project Info' -Description @(
+            ShowCommandScreen -Heading 'Project details' -Description @(
                 'Multiple projects matched.'
                 'Choose the project you want to inspect.'
             )
@@ -312,7 +312,7 @@ function Invoke-ProjectInfoFlow {
         }
     }
     else {
-        $project = Select-Project -Heading 'Project Info' -Description @(
+        $project = Select-Project -Heading 'Project details' -Description @(
             'Which project do you want info for?'
             'Search by project name, or press Enter to list all projects.'
         )
@@ -325,8 +325,8 @@ function Invoke-ProjectInfoFlow {
     $gitInfo = Get-ProjectGitMetadata -ProjectPath $project.FullName
     $stackTags = @(Get-ProjectStackTags -ProjectPath $project.FullName)
 
-    ShowCommandScreen -Heading 'Project Info' -Description @(
-        'Quick project summary without leaving DevTools.'
+    ShowCommandScreen -Heading 'Project details' -Description @(
+        'Quick project summary without leaving DevRepo.'
     )
 
     Show-ProjectInfoBlock -Project $project -GitInfo $gitInfo -StackTags $stackTags

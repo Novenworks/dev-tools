@@ -2,7 +2,7 @@
 
 Find every website you have on GitHub, compare it with Vercel, and fix what is missing — without opening 200 repositories and 50 Vercel projects by hand.
 
-Deployment Manager is **optional**. DevTools works fully without it, and `dev doctor` stays green whether or not Vercel is connected.
+Deployment Manager is **optional**. DevRepo works fully without it, and `devrepo doctor` stays green whether or not Vercel is connected.
 
 ---
 
@@ -26,7 +26,7 @@ GitHub repositories
    verify production          (dev deploy verify)
 ```
 
-Once a repository is connected through Vercel's Git integration, future merges to the production branch deploy automatically. DevTools handles **discovery, onboarding, auditing, and verification** — not repeated redeployment of healthy sites.
+Once a repository is connected through Vercel's Git integration, future merges to the production branch deploy automatically. DevRepo handles **discovery, onboarding, auditing, and verification** — not repeated redeployment of healthy sites.
 
 ---
 
@@ -34,13 +34,13 @@ Once a repository is connected through Vercel's Git integration, future merges t
 
 | Command | Changes anything? | What it does |
 | --- | --- | --- |
-| `dev deploy` | No (menu) | Interactive Deployment Manager |
-| `dev deploy audit` | **No** | Compare every eligible repository against Vercel |
-| `dev deploy plan` | **No** | Show exactly what `sync` would create |
-| `dev deploy sync` | **Yes** | Create missing projects and start first deployments, after you approve |
-| `dev deploy verify` | **No** | Check that production deployments are healthy |
-| `dev deploy status` | **No** | Show deployment settings and readiness |
-| `dev deploy help` | **No** | Command help |
+| `devrepo deploy` | No (menu) | Interactive Deployment Manager |
+| `devrepo deploy audit` | **No** | Compare every eligible repository against Vercel |
+| `devrepo deploy plan` | **No** | Show exactly what `sync` would create |
+| `devrepo deploy sync` | **Yes** | Create missing projects and start first deployments, after you approve |
+| `devrepo deploy verify` | **No** | Check that production deployments are healthy |
+| `devrepo deploy status` | **No** | Show deployment settings and readiness |
+| `devrepo deploy help` | **No** | Command help |
 
 ### Options
 
@@ -50,7 +50,7 @@ Once a repository is connected through Vercel's Git integration, future merges t
 | `--owner NAME` | all | Audit one GitHub owner instead of every configured owner |
 | `--no-http` | `verify` | Skip the production URL health check |
 
-`dev deploy sync --apply` exists for automation. Use it only when you have already reviewed `dev deploy plan`.
+`devrepo deploy sync --apply` exists for automation. Use it only when you have already reviewed `devrepo deploy plan`.
 
 ---
 
@@ -58,28 +58,28 @@ Once a repository is connected through Vercel's Git integration, future merges t
 
 ```powershell
 # 1. See the current state. Nothing is changed.
-dev deploy audit
+devrepo deploy audit
 
 # 2. See exactly what would be created. Nothing is changed.
-dev deploy plan
+devrepo deploy plan
 
 # 3. Approve and apply.
-dev deploy sync
+devrepo deploy sync
 
 # 4. Confirm production is healthy. Nothing is changed.
-dev deploy verify
+devrepo deploy verify
 ```
 
 ---
 
 ## Connecting Vercel
 
-DevTools reads your Vercel token from an environment variable. **It is never stored in `config.json`, never written to a report, and never printed.**
+DevRepo reads your Vercel token from an environment variable. **It is never stored in `config.json`, never written to a report, and never printed.**
 
 ```powershell
 # Current PowerShell session only
 $env:VERCEL_TOKEN = "your-token"
-dev deploy audit
+devrepo deploy audit
 ```
 
 Create a token at <https://vercel.com/account/tokens>.
@@ -131,7 +131,7 @@ Repository names are matched against both `Repo-Name` and `Owner/Repo-Name`.
 
 ## Is it actually a website?
 
-Before proposing anything, DevTools inspects the repository's root **remotely through GitHub** — no cloning required.
+Before proposing anything, DevRepo inspects the repository's root **remotely through GitHub** — no cloning required.
 
 Recognized indicators include `package.json`, `next.config.*`, `vite.config.*`, `astro.config.*`, `svelte.config.*`, `nuxt.config.*`, `vercel.json`, `index.html`, and `src/`, `app/`, `pages/`, `public/` folders.
 
@@ -168,7 +168,7 @@ Vercel:  good-quality-hvac-demo
          good-quality-hvac-demo-8lrn
 ```
 
-DevTools reports `AMBIGUOUS_MATCH` and does nothing. It will not pick one, will not create a third project, and will not modify either. Resolve it by adding a `projectMappings` entry, or by connecting the correct project to GitHub in Vercel.
+DevRepo reports `AMBIGUOUS_MATCH` and does nothing. It will not pick one, will not create a third project, and will not modify either. Resolve it by adding a `projectMappings` entry, or by connecting the correct project to GitHub in Vercel.
 
 Definitive Git-integration matches are resolved first across the whole portfolio, so a project that clearly belongs to one repository is never claimed by another through a name-only match.
 
@@ -189,7 +189,7 @@ Definitive Git-integration matches are resolved first across the whole portfolio
 | `SKIPPED` | Skipped by the eligibility rules. |
 | `AMBIGUOUS_MATCH` | More than one Vercel project could belong to this repository. |
 | `AUTH_REQUIRED` | Vercel authentication is needed before this can be checked. |
-| `UNKNOWN` | DevTools could not determine the state. |
+| `UNKNOWN` | DevRepo could not determine the state. |
 
 ---
 
@@ -217,7 +217,7 @@ Definitive Git-integration matches are resolved first across the whole portfolio
 
 ### Idempotency
 
-Running `dev deploy sync` twice does not create duplicates. On the second run the newly created project matches through Git integration, audits as `READY`, and no action is taken.
+Running `devrepo deploy sync` twice does not create duplicates. On the second run the newly created project matches through Git integration, audits as `READY`, and no action is taken.
 
 ---
 
@@ -305,11 +305,11 @@ Two or more Vercel projects could belong to one repository. Add a `projectMappin
 
 ### `PRODUCTION_BRANCH_MISMATCH`
 
-Vercel deploys production from a different branch than the repository default. Either change it in Vercel, or add a `productionBranchOverrides` entry so DevTools expects that branch.
+Vercel deploys production from a different branch than the repository default. Either change it in Vercel, or add a `productionBranchOverrides` entry so DevRepo expects that branch.
 
 ### `DEPLOYMENT_FAILED`
 
-The build failed on Vercel. DevTools does not retry it — open the project in Vercel and read the build log. Re-running the same commit would fail the same way.
+The build failed on Vercel. DevRepo does not retry it — open the project in Vercel and read the build log. Re-running the same commit would fail the same way.
 
 ### GitHub API rate limit
 
@@ -317,7 +317,7 @@ The audit records the failure for that repository, keeps going, and shows a warn
 
 ### The audit is slow on a large organization
 
-Each candidate repository needs one or two GitHub API calls. Narrow `includeNamePatterns`, or audit one owner at a time with `dev deploy audit --owner NAME`.
+Each candidate repository needs one or two GitHub API calls. Narrow `includeNamePatterns`, or audit one owner at a time with `devrepo deploy audit --owner NAME`.
 
 ---
 

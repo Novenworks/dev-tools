@@ -64,7 +64,7 @@ function Format-RepositorySyncLine {
         }
         default {
             $reason = $Result.Reason
-            if ([string]::IsNullOrWhiteSpace($reason)) { $reason = 'DevTools could not update this safely' }
+            if ([string]::IsNullOrWhiteSpace($reason)) { $reason = 'DevRepo could not update this safely' }
             return "$symbol Skipped: $($Result.Name) - $reason"
         }
     }
@@ -298,16 +298,13 @@ function Invoke-RepositoryReportExport {
 function Invoke-RepositorySyncFlow {
     <#
     .SYNOPSIS
-        The Sync Repositories experience.
+        The Update my projects experience.
     #>
-    param([switch]$SkipHeader)
-
-    if (-not $SkipHeader) {
-        ShowCommandScreen -Heading 'Sync Repositories' -Description @(
-            'Refresh GitHub state and safely update repositories that can be fast-forwarded'
-            'without touching local work.'
-        )
-    }
+    ShowCommandScreen -Heading 'Update my projects' -Description @(
+        'Check each Git remote for newer commits and update clean projects when Git can apply the changes directly.'
+        'Projects with unfinished work, conflicts or branches that have diverged are skipped.'
+        'Afterward, review what updated and which projects need attention.'
+    )
 
     if (-not (Test-RepositoryWorkspaceReady)) { return $null }
 
@@ -315,7 +312,12 @@ function Invoke-RepositorySyncFlow {
 
     if ($repos.Count -eq 0) {
         ShowInfo 'No repositories found yet.'
-        ShowInfo 'Next step: run Clone missing repositories.'
+        ShowInfo 'Next step: run Download new projects.'
+        return $null
+    }
+
+    if (-not (Confirm-DevRepoAction -Label "Check and update $($repos.Count) Git projects")) {
+        ShowInfo 'Update canceled before checking remotes.'
         return $null
     }
 
@@ -376,12 +378,12 @@ function Invoke-RepositorySyncNextSteps {
         Write-Host ''
         Write-Host 'What next?' -ForegroundColor Cyan
         Write-Host ''
-        Write-Host '  1  Review repositories needing attention'
-        Write-Host '  2  Export diagnostic report'
-        Write-Host '  3  Return'
-        Write-Host ''
-
-        $choice = Read-Host 'Choose an option'
+        $options = @(
+            [pscustomobject]@{ Key = '1'; Label = 'Review repositories needing attention' }
+            [pscustomobject]@{ Key = '2'; Label = 'Export diagnostic report' }
+            [pscustomobject]@{ Key = '3'; Label = 'Back' }
+        )
+        $choice = Read-DevRepoMenuChoice -Options $options -BackKey '3'
 
         switch ($choice) {
             '1' {
@@ -414,7 +416,7 @@ function Invoke-RepositorySyncNextSteps {
 function Invoke-RepositoryHealthFlow {
     <#
     .SYNOPSIS
-        The Repository Health experience: what in my workspace needs attention?
+        The Check project health experience: what in my workspace needs attention?
     #>
     param([switch]$Refresh)
 
@@ -424,7 +426,7 @@ function Invoke-RepositoryHealthFlow {
 
     if ($repos.Count -eq 0) {
         ShowInfo 'No repositories found yet.'
-        ShowInfo 'Next step: run Clone missing repositories after signing in to GitHub.'
+        ShowInfo 'Next step: run Download new projects after signing in to GitHub.'
         return
     }
 
@@ -446,7 +448,7 @@ function Invoke-RepositoryHealthFlow {
         $filter = 'Attention'
 
         while ($true) {
-            ShowCommandScreen -Heading 'Repository Health' -Clear -Description @(
+            ShowCommandScreen -Heading 'Check project health' -Clear -Description @(
                 'What in your workspace needs attention?'
                 $(if ($refreshed) { 'Remote state was refreshed for this view.' } else { 'Local view. Choose R to refresh GitHub state.' })
             )
@@ -467,22 +469,15 @@ function Invoke-RepositoryHealthFlow {
             Write-Host 'View' -ForegroundColor Cyan
             Write-Host ''
 
-            foreach ($definition in Get-RepositoryFilterDefinitions) {
-                Write-Host "  $($definition.Key)  $($definition.Label)"
-            }
-
-            Write-Host '  9  Return'
-            Write-Host ''
-            Write-Host '  D  Show details for the repositories in this view'
-            Write-Host '  R  Refresh GitHub state'
-            Write-Host '  E  Export diagnostic report'
-            Write-Host ''
-
-            $choice = Read-Host 'Choose an option'
-            if ($null -eq $choice) { $choice = '' }
-            $normalized = $choice.Trim().ToUpper()
-
-            $definition = Get-RepositoryFilterDefinitions | Where-Object { $_.Key -eq $normalized } | Select-Object -First 1
+            $filters = @(Get-RepositoryFilterDefinitions)
+            $options = $filters + @(
+                [pscustomobject]@{ Key = '9'; Label = 'Back' }
+                [pscustomobject]@{ Key = 'D'; Label = 'Show details for projects in this view' }
+                [pscustomobject]@{ Key = 'R'; Label = 'Fetch remote state for this view' }
+                [pscustomobject]@{ Key = 'E'; Label = 'Save a diagnostic report locally' }
+            )
+            $normalized = (Read-DevRepoMenuChoice -Options $options -BackKey '9').ToUpper()
+            $definition = $filters | Where-Object { $_.Key -eq $normalized } | Select-Object -First 1
 
             if ($definition) {
                 $filter = $definition.Filter
@@ -545,7 +540,7 @@ function Show-UpstreamRepairPlan {
         }
     }
     else {
-        ShowWarning '  DevTools will not repair this automatically.'
+        ShowWarning '  DevRepo will not repair this automatically.'
         foreach ($blocker in $Plan.Blockers) {
             Write-Host "    $blocker" -ForegroundColor DarkGray
         }
@@ -585,7 +580,7 @@ function Invoke-UpstreamRepairFlow {
             Write-Host "    Working tree is clean: yes" -ForegroundColor DarkGray
             Write-Host "    Conflicts or operations in progress: none" -ForegroundColor DarkGray
             Write-Host "    Commits on $($plan.CurrentBranch) missing from $($plan.DefaultBranch): $($plan.UnmergedCommits)" -ForegroundColor DarkGray
-            Write-Host "    Branch deletion: DevTools never deletes a branch during repair" -ForegroundColor DarkGray
+            Write-Host "    Branch deletion: DevRepo never deletes a branch during repair" -ForegroundColor DarkGray
             Write-Host ''
 
             if (-not (ShowYesNoPrompt -Prompt "Repair $($plan.Name)?" -YesLabel '[Y] Repair' -NoLabel '[N] Skip')) {
@@ -616,7 +611,7 @@ function Invoke-UpstreamRepairFlow {
         }
     }
     else {
-        ShowWarning "DevTools did not change $($plan.Name)."
+        ShowWarning "DevRepo did not change $($plan.Name)."
         ShowInfo $result.Error
     }
 }
@@ -697,7 +692,7 @@ function Invoke-BranchCleanupFlow {
                 Write-Host "    $($branch.Reason)" -ForegroundColor DarkGray
 
                 if (-not $branch.SafeToDelete) {
-                    ShowWarning '    DevTools will not delete this branch.'
+                    ShowWarning '    DevRepo will not delete this branch.'
                     continue
                 }
 
@@ -775,7 +770,7 @@ function Invoke-RepositoryPushAction {
     }
     else {
         if ([string]::IsNullOrWhiteSpace($State.RemoteName)) {
-            ShowWarning 'This repository has no remote, so DevTools cannot push.'
+            ShowWarning 'This repository has no remote, so DevRepo cannot push.'
             return
         }
 
@@ -810,7 +805,7 @@ function Show-RepositoryBranches {
     Write-Host ''
 
     if (-not $result.Success) {
-        ShowWarning 'DevTools could not list branches for this repository.'
+        ShowWarning 'DevRepo could not list branches for this repository.'
         return
     }
 
@@ -863,7 +858,7 @@ function Invoke-RepositoryActionsMenu {
         Write-Host "  1   Open in $(Get-EditorDisplayName -Editor $Config.defaultEditor)"
         Write-Host '  2   Open folder'
         Write-Host '  3   Open on GitHub'
-        Write-Host '  4   Repository health'
+        Write-Host '  4   Check project health'
         Write-Host '  5   Refresh remote status'
         Write-Host '  6   Fetch'
         Write-Host '  7   Pull (fast-forward only)'
@@ -917,7 +912,7 @@ function Invoke-RepositoryActionsMenu {
                         ShowSuccess 'Remote state refreshed.'
                     }
                     else {
-                        ShowWarning 'DevTools could not refresh the remote state.'
+                        ShowWarning 'DevRepo could not refresh the remote state.'
                         ShowInfo (@($fetch.Lines) | Select-Object -First 1)
                     }
                 }
@@ -949,14 +944,14 @@ function Invoke-RepositoryActionsMenu {
             }
             '9' {
                 if ([string]::IsNullOrWhiteSpace($state.DefaultBranch)) {
-                    ShowWarning 'DevTools could not determine the default branch.'
+                    ShowWarning 'DevRepo could not determine the default branch.'
                 }
                 elseif ($state.CurrentBranch -eq $state.DefaultBranch) {
                     ShowInfo "Already on $($state.DefaultBranch)."
                 }
                 elseif ($state.IsDirty -or $state.HasConflicts) {
                     ShowWarning 'This repository has uncommitted changes.'
-                    ShowInfo 'Review or commit them first. DevTools will not switch branches and risk local work.'
+                    ShowInfo 'Review or commit them first. DevRepo will not switch branches and risk local work.'
                 }
                 elseif (ShowYesNoPrompt -Prompt "Switch to $($state.DefaultBranch)?" -YesLabel '[Y] Switch' -NoLabel '[N] Cancel') {
                     $checkout = Invoke-DevToolsGit -RepoPath $state.Path -GitArgs @('checkout', $state.DefaultBranch)
@@ -965,7 +960,7 @@ function Invoke-RepositoryActionsMenu {
                         ShowSuccess "Switched to $($state.DefaultBranch)."
                     }
                     else {
-                        ShowWarning 'DevTools could not switch branches.'
+                        ShowWarning 'DevRepo could not switch branches.'
                         ShowInfo (@($checkout.Lines) | Select-Object -First 1)
                     }
                 }
@@ -1039,7 +1034,7 @@ function Invoke-RepositoryActionsFlow {
 }
 
 # ---------------------------------------------------------------------------
-# Repository maintenance menu
+# Fix repository issues menu
 # ---------------------------------------------------------------------------
 
 function Invoke-RepositoryMaintenanceMenu {
@@ -1049,21 +1044,22 @@ function Invoke-RepositoryMaintenanceMenu {
     #>
 
     while ($true) {
-        ShowCommandScreen -Heading 'Repository Maintenance' -Clear -Description @(
-            'Keep a large workspace healthy without risking local work.'
+        ShowCommandScreen -Heading 'Fix repository issues' -Clear -Description @(
+            'Review projects that need attention, choose repairs or export a diagnostic report.'
+            'Repairs and branch cleanup show a preview before changing a project.'
         )
 
-        Write-Host '  1  Sync repositories'
-        Write-Host '  2  Repository health'
-        Write-Host '  3  Review repositories needing attention'
-        Write-Host '  4  Repair broken upstreams'
-        Write-Host '  5  Branch cleanup'
-        Write-Host '  6  Export diagnostic report'
-        Write-Host '  7  Repository actions (single repository)'
-        Write-Host '  8  Return'
-        Write-Host ''
-
-        $choice = Read-Host 'Choose an option'
+        $choices = @(
+            [pscustomobject]@{ Key = '1'; Label = 'Update my projects' }
+            [pscustomobject]@{ Key = '2'; Label = 'Check project health' }
+            [pscustomobject]@{ Key = '3'; Label = 'Review repositories needing attention' }
+            [pscustomobject]@{ Key = '4'; Label = 'Repair broken upstreams' }
+            [pscustomobject]@{ Key = '5'; Label = 'Branch cleanup' }
+            [pscustomobject]@{ Key = '6'; Label = 'Export diagnostic report' }
+            [pscustomobject]@{ Key = '7'; Label = 'Repository actions (single repository)' }
+            [pscustomobject]@{ Key = '8'; Label = 'Return' }
+        )
+        $choice = Read-DevRepoMenuChoice -Options $choices -BackKey '8'
 
         switch ($choice) {
             '1' {

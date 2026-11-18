@@ -1,6 +1,6 @@
 # Deployment Manager — GitHub discovery and remote deployability inspection.
 #
-# DevTools uses the GitHub CLI (gh) that it already depends on. No second token
+# DevRepo uses the GitHub CLI (gh) that it already depends on. No second token
 # system is introduced, and repositories are inspected remotely so a portfolio
 # audit never requires cloning hundreds of repositories.
 
@@ -46,7 +46,7 @@ function Invoke-DeployGhJson {
             return [pscustomobject]@{
                 Success      = $false
                 Data         = $null
-                Error        = 'GitHub returned a response DevTools could not read.'
+                Error        = 'GitHub returned a response DevRepo could not read.'
                 RateLimited  = $false
                 NotFound     = $false
                 Unauthorized = $false
@@ -108,7 +108,7 @@ function Get-DeployGhErrorMessage {
 function ConvertFrom-DeployGhRepository {
     <#
     .SYNOPSIS
-        Maps a gh repo list JSON record onto the DevTools repository model.
+        Maps a gh repo list JSON record onto the DevRepo repository model.
     #>
     param($Record, [string]$FallbackOwner)
 
@@ -148,7 +148,7 @@ function Get-DeploymentRepositoriesForOwner {
     .SYNOPSIS
         Enumerates every repository for a GitHub owner or organization.
     .DESCRIPTION
-        gh handles paging internally; DevTools raises the page limit far above the
+        gh handles paging internally; DevRepo raises the page limit far above the
         default 30 so large organizations are fully enumerated, and warns when the
         result may have been truncated.
     #>

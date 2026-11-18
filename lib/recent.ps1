@@ -127,124 +127,37 @@ function Open-RecentProject {
     return $true
 }
 
-function Show-HomeRecentProjects {
-    $recents = @(Get-RecentProjects | Select-Object -First 5)
-
-    if ($recents.Count -eq 0) {
-        return
-    }
-
-    Write-Host 'Recent Projects' -ForegroundColor Cyan
-    Write-Host ''
-
-    for ($i = 0; $i -lt $recents.Count; $i++) {
-        Write-Host ("  {0}  {1}" -f ($i + 1), $recents[$i].Name) -ForegroundColor DarkGray
-    }
-
-    Write-Host ''
-    ShowInfo 'Press O to open a recent project.'
-    Write-Host ''
-}
-
-function Invoke-RecentProjectsEmptyState {
-    ShowCommandScreen -Heading 'Recent Projects' -Description @(
-        'No recent projects yet.'
-        'Open a project first, and it will appear here next time.'
-    )
-
-    Write-Host '  1  Open Project Search'
-    Write-Host '  2  Main Menu'
-    Write-Host '  3  Exit'
-    Write-Host ''
-
-    $choice = Read-Host 'Choose an option'
-
-    switch ($choice) {
-        '1' { Invoke-OpenProjectFlow }
-        '2' {
-            . (Join-Path $DevToolsRoot 'commands\menu.ps1')
-            exit 0
-        }
-        '3' { exit 0 }
-        default {
-            ShowWarning 'Please choose 1, 2, or 3.'
-        }
-    }
-}
-
 function Invoke-RecentProjectsFlow {
     $recents = @(Get-RecentProjects)
-
     if ($recents.Count -eq 0) {
-        Invoke-RecentProjectsEmptyState
+        ShowCommandScreen -Heading 'Recently opened' -Description @(
+            'Open a project and it will appear here next time.'
+        )
+        $choices = @(
+            [pscustomobject]@{ Key = '1'; Label = 'Open a project' }
+            [pscustomobject]@{ Key = '0'; Label = 'Back' }
+        )
+        if ((Read-DevRepoMenuChoice -Options $choices -BackKey '0') -eq '1') {
+            Invoke-OpenProjectFlow
+        }
         return
     }
 
-    ShowCommandScreen -Heading 'Recent Projects' -Description @(
-        'Your most recently opened projects.'
-        'Choose a number to open a project.'
+    ShowCommandScreen -Heading 'Recently opened' -Description @(
+        'Choose a project to open it in your configured editor.'
     )
-
-    for ($i = 0; $i -lt $recents.Count; $i++) {
-        $entry = $recents[$i]
-        $suffix = if ($entry.OpenCount -gt 1) { "  (opened $($entry.OpenCount) times)" } else { '' }
-        Write-Host ("  {0}  {1}{2}" -f ($i + 1), $entry.Name, $suffix)
-    }
-
-    Write-Host ''
-    $choice = Read-Host 'Project number'
-
-    if ($choice -notmatch '^\d+$') {
-        ShowWarning 'Enter the number for the project you want.'
-        return
-    }
-
-    $index = [int]$choice - 1
-    if ($index -lt 0 -or $index -ge $recents.Count) {
-        ShowWarning 'Invalid project number.'
-        return
-    }
-
-    Open-RecentProject -Entry $recents[$index] | Out-Null
-}
-
-function Invoke-RecentProjectsPicker {
-    param(
-        [int]$MaxItems = 5
+    $choices = @(
+        for ($i = 0; $i -lt $recents.Count; $i++) {
+            [pscustomobject]@{ Key = [string]($i + 1); Label = $recents[$i].Name }
+        }
+        [pscustomobject]@{ Key = '0'; Label = 'Back' }
     )
-
-    $recents = @(Get-RecentProjects | Select-Object -First $MaxItems)
-
-    if ($recents.Count -eq 0) {
-        ShowInfo 'No recent projects yet. Open a project first.'
-        Wait-ForKey -Message 'Press Enter to continue'
-        return
+    $choice = Read-DevRepoMenuChoice -Options $choices -BackKey '0'
+    $number = 0
+    if ([int]::TryParse($choice, [ref]$number) -and $number -ge 1 -and $number -le $recents.Count) {
+        Open-RecentProject -Entry $recents[$number - 1] | Out-Null
     }
-
-    Write-Host ''
-    Write-Host 'Open Recent Project' -ForegroundColor Cyan
-    Write-Host ''
-
-    for ($i = 0; $i -lt $recents.Count; $i++) {
-        Write-Host ("  {0}  {1}" -f ($i + 1), $recents[$i].Name)
+    elseif ($choice -ne '0') {
+        ShowWarning 'Choose a project number from the list.'
     }
-
-    Write-Host ''
-    $choice = Read-Host 'Project number'
-
-    if ($choice -notmatch '^\d+$') {
-        ShowWarning 'Enter the number for the project you want.'
-        Wait-ForKey -Message 'Press Enter to try again'
-        return
-    }
-
-    $index = [int]$choice - 1
-    if ($index -lt 0 -or $index -ge $recents.Count) {
-        ShowWarning 'Invalid project number.'
-        Wait-ForKey -Message 'Press Enter to try again'
-        return
-    }
-
-    Open-RecentProject -Entry $recents[$index] | Out-Null
-    Wait-ForKey -Message 'Press Enter to continue'
 }

@@ -1,6 +1,6 @@
-# DevTools Architecture
+# DevRepo Architecture
 
-Overview of how DevTools is structured. For maintainer detail, see [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md).
+Overview of how DevRepo is structured. For maintainer detail, see [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md).
 
 ---
 
@@ -70,7 +70,7 @@ VERSION                    Single source for version string
 | `recent.ps1` | Recent project history |
 | `project-info.ps1` | Project inspection |
 | `test.ps1` | Test runner wrapper |
-| `self.ps1` | DevTools self-management |
+| `self.ps1` | DevRepo self-management |
 | `deploy-config.ps1` | Deployment settings, name normalization, eligibility rules |
 | `deploy-github.ps1` | Repository discovery and remote deployability inspection (`gh`) |
 | `deploy-vercel.ps1` | Vercel REST client, pagination, deployment polling |

@@ -1,6 +1,6 @@
-# DevTools Roadmap
+# DevRepo Roadmap
 
-Public summary of DevTools milestones. Detailed issue tracking lives in GitHub Issues and [`.github/milestones.md`](../.github/milestones.md).
+See the [DevRepo roadmap](roadmap/devrepo-roadmap.md) for the current engineering plan. This page records the earlier DevTools milestones. Detailed issue tracking lives in GitHub Issues and [`.github/milestones.md`](../.github/milestones.md).
 
 ---
 

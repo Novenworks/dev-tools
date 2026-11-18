@@ -5,7 +5,7 @@ function Get-RepoStatusDetails {
     .DESCRIPTION
         Backward-compatible shape kept for existing callers. It is now a thin
         projection of the shared repository state model in lib/repo-state.ps1,
-        so DevTools has one source of truth for repository status.
+        so DevRepo has one source of truth for repository status.
     #>
     param(
         [Parameter(Mandatory = $true)]
@@ -47,8 +47,8 @@ function Get-RepoStatusDetails {
 
 function Test-RequireGit {
     if (-not (Test-CommandExists 'git')) {
-        ShowError 'Git is not installed yet. Run Doctor to check your setup.'
-        ShowInfo 'Next step: dev doctor'
+        ShowError 'Git is not installed yet. Run devrepo doctor to check your setup.'
+        ShowInfo 'Next step: devrepo doctor'
         return $false
     }
 
@@ -61,12 +61,12 @@ function Get-WorkspaceGitRepos {
         [string]$WorkspacePath
     )
 
-    if (-not (Test-Path $WorkspacePath)) {
+    if (-not (Test-Path -LiteralPath $WorkspacePath -PathType Container)) {
         return @()
     }
 
-    return Get-ChildItem -Path $WorkspacePath -Directory -ErrorAction SilentlyContinue |
-        Where-Object { Test-Path (Join-Path $_.FullName '.git') } |
+    return Get-ChildItem -LiteralPath $WorkspacePath -Directory -ErrorAction SilentlyContinue |
+        Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName '.git') } |
         Sort-Object Name
 }
 
@@ -121,7 +121,7 @@ function Invoke-GitPullWithOutput {
         Fast-forward-only pull for a single repository.
     .DESCRIPTION
         Kept for backward compatibility. It never creates a merge commit and
-        never rewrites history: DevTools bulk updates are fast-forward only.
+        never rewrites history: DevRepo bulk updates are fast-forward only.
     #>
     param(
         [Parameter(Mandatory = $true)]

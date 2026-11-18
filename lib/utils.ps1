@@ -20,7 +20,7 @@ function Get-DevToolsCoreScriptPath {
 function Get-DevToolsRoot {
     <#
     .SYNOPSIS
-        Returns the DevTools installation root directory.
+        Returns the DevRepo installation root directory.
     .DESCRIPTION
         Canonical root detection based on the running installation, not the current working directory.
     #>
@@ -142,16 +142,15 @@ function Test-ClaudeDesktopInstalled {
     .SYNOPSIS
         Checks common Claude Desktop install locations on Windows.
     #>
-    $candidates = @(
-        (Join-Path $env:LOCALAPPDATA 'Programs\Claude\Claude.exe'),
-        (Join-Path $env:ProgramFiles 'Claude\Claude.exe'),
-        (Join-Path ${env:ProgramFiles(x86)} 'Claude\Claude.exe')
+    $roots = @(
+        $env:LOCALAPPDATA
+        $env:ProgramFiles
+        ${env:ProgramFiles(x86)}
     )
-
-    foreach ($path in $candidates) {
-        if ($path -and (Test-Path $path)) {
-            return $true
-        }
+    for ($i = 0; $i -lt $roots.Count; $i++) {
+        if (-not $roots[$i]) { continue }
+        $relativePath = if ($i -eq 0) { 'Programs/Claude/Claude.exe' } else { 'Claude/Claude.exe' }
+        if (Test-Path -LiteralPath (Join-Path $roots[$i] $relativePath)) { return $true }
     }
 
     return $false

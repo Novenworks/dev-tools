@@ -1,9 +1,9 @@
 function Get-ProductName {
-    return 'DevTools'
+    return 'DevRepo'
 }
 
 function Get-ProductSubtitle {
-    return 'An open-source project by Novenworks.'
+    return 'Your development workspace, simplified.'
 }
 
 function Get-ProductTitle {
@@ -159,27 +159,6 @@ function ShowScreenDescription {
     Write-Host ''
 }
 
-function ShowHomeLanding {
-    param([switch]$Clear)
-
-    if ($Clear) {
-        Clear-Host
-    }
-
-    Write-Host (Get-ProductTitle) -ForegroundColor Cyan
-    Write-Host (Get-ProductSubtitle) -ForegroundColor DarkGray
-    Write-Host ''
-    Write-Host 'Manage your development workspace from one place.' -ForegroundColor DarkGray
-    Write-Host ''
-
-    if ($Config) {
-        ShowWorkspaceContext
-    }
-
-    Write-Host '---' -ForegroundColor DarkGray
-    Write-Host ''
-}
-
 function ShowWorkspaceContext {
     $repoCount = 0
 
@@ -211,6 +190,7 @@ function ShowContextHeader {
 
     Write-Host (Get-ProductTitle) -ForegroundColor Cyan
     Write-Host (Get-ProductSubtitle) -ForegroundColor DarkGray
+    Write-Host 'by Novenworks' -ForegroundColor DarkGray
     Write-Host ''
 
     if ($Config) {
@@ -346,46 +326,101 @@ function Wait-ForKey {
 
     Write-Host ''
     Write-Host $Message -ForegroundColor DarkGray
-    Read-Host | Out-Null
+    if (Test-DevRepoKeyboardInput) {
+        do { $key = [Console]::ReadKey($true) } while ($key.Key -notin @('Enter', 'Escape'))
+    }
+    else { Read-Host | Out-Null }
 }
 
-function ShowMainMenuOptions {
-    Write-Host '  1  Home Dashboard'
-    Write-Host '  2  Quick Actions'
-    Write-Host '  3  Recent Projects'
-    Write-Host '  4  Project Info'
-    Write-Host '  5  Doctor'
-    Write-Host '  6  Configure'
-    Write-Host '  7  Settings'
-    Write-Host '  8  Clone missing repositories'
-    Write-Host '  9  Sync repositories'
-    Write-Host '  10 Repository health'
-    Write-Host '  11 Repository maintenance'
-    Write-Host '  12 Backup changed repositories'
-    Write-Host '  13 Open project'
-    Write-Host '  14 Deployment Manager'
-    Write-Host '  15 Help'
-    Write-Host '  16 Exit'
-    Write-Host ''
-    Write-Host 'Type a number and press Enter.' -ForegroundColor DarkGray
-    Write-Host ''
+function Test-DevRepoKeyboardInput {
+    if ($Host.Name -ne 'ConsoleHost' -or [Console]::IsInputRedirected -or [Console]::IsOutputRedirected) {
+        return $false
+    }
+
+    try {
+        $null = [Console]::KeyAvailable
+        return $true
+    }
+    catch {
+        return $false
+    }
 }
 
-function ShowHomeActions {
+function Read-DevRepoMenuChoice {
     param(
-        [Parameter(Mandatory = $true)]$Actions
+        [Parameter(Mandatory = $true)][array]$Options,
+        [string]$BackKey = 'Back',
+        [hashtable]$Shortcuts = @{}
     )
 
-    Write-Host '---' -ForegroundColor DarkGray
-    Write-Host ''
-
-    foreach ($action in $Actions) {
-        Write-Host "  $($action.Key)  $($action.Label)"
+    foreach ($option in $Options) {
+        Write-Host ("  {0,-2} {1}" -f $option.Key, $option.Label)
     }
 
     Write-Host ''
-    Write-Host 'Type a number and press Enter.' -ForegroundColor DarkGray
-    Write-Host ''
+    if (-not (Test-DevRepoKeyboardInput)) {
+        $choice = Read-Host 'Enter a shortcut or type Back'
+        if ($null -eq $choice -or $choice.Trim() -eq 'Back') { return $BackKey }
+        return $choice.Trim()
+    }
+
+    Write-Host 'Use arrow keys and Enter, type a shortcut, or press Esc to go back.'
+    $index = 0
+    $typed = ''
+
+    while ($true) {
+        $focus = if ($typed) { "Shortcut: $typed" } else { "> $($Options[$index].Key) $($Options[$index].Label)" }
+        try {
+            $width = [Console]::BufferWidth - 1
+            if ($width -lt 1) { $width = 79 }
+            [Console]::Write("`r" + $focus.Substring(0, [Math]::Min($focus.Length, $width)).PadRight($width))
+            $key = [Console]::ReadKey($true)
+        }
+        catch {
+            Write-Host ''
+            $choice = Read-Host 'Enter a shortcut or type Back'
+            if ($null -eq $choice -or $choice.Trim() -eq 'Back') { return $BackKey }
+            return $choice.Trim()
+        }
+
+        switch ($key.Key) {
+            'UpArrow' {
+                $index = ($index + $Options.Count - 1) % $Options.Count
+                $typed = ''
+            }
+            'DownArrow' {
+                $index = ($index + 1) % $Options.Count
+                $typed = ''
+            }
+            'Backspace' {
+                if ($typed.Length -gt 0) { $typed = $typed.Substring(0, $typed.Length - 1) }
+            }
+            'Escape' { Write-Host ''; return $BackKey }
+            'Enter' {
+                Write-Host ''
+                if ($typed) { return $typed }
+                return $Options[$index].Key
+            }
+            default {
+                $character = [string]$key.KeyChar
+                if ($character -notmatch '^[a-z0-9]$') { continue }
+                $typed = "$typed$character"
+                $exact = $typed -in $Options.Key -or $Shortcuts.ContainsKey($typed)
+                $longer = $Options.Key -like "${typed}?*"
+                if ($exact -and -not $longer) { Write-Host ''; return $typed }
+            }
+        }
+    }
+}
+
+function Confirm-DevRepoAction {
+    param([Parameter(Mandatory = $true)][string]$Label)
+
+    $choices = @(
+        [pscustomobject]@{ Key = 'N'; Label = 'Go back' }
+        [pscustomobject]@{ Key = 'Y'; Label = $Label }
+    )
+    return (Read-DevRepoMenuChoice -Options $choices -BackKey 'N') -eq 'Y'
 }
 
 function ShowYesNoPrompt {
@@ -413,16 +448,6 @@ function ShowInstallPrompt {
     Write-Host ''
 
     $answer = Read-Host $Prompt
-    return ($answer -match '^[Yy]$')
-}
-
-function ShowSavePrompt {
-    Write-Host ''
-    Write-Host '[Y] Save' -ForegroundColor Green
-    Write-Host '[N] Start Over' -ForegroundColor DarkGray
-    Write-Host ''
-
-    $answer = Read-Host 'Save these settings?'
     return ($answer -match '^[Yy]$')
 }
 

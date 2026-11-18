@@ -1,6 +1,6 @@
 # Repository intelligence - guided upstream repair and safe merged-branch cleanup.
 #
-# Safety contract: DevTools never force-deletes a branch, never deletes an
+# Safety contract: DevRepo never force-deletes a branch, never deletes an
 # unmerged branch, and never switches branches when local work could be lost.
 
 # ---------------------------------------------------------------------------
@@ -96,11 +96,11 @@ function Get-UpstreamRepairSafety {
     }
 
     if ([string]::IsNullOrWhiteSpace($State.DefaultBranch)) {
-        $blockers += 'DevTools could not determine the default branch.'
+        $blockers += 'DevRepo could not determine the default branch.'
     }
 
     if ([string]::IsNullOrWhiteSpace($ComparisonRef)) {
-        $blockers += 'DevTools could not find the default branch to compare against.'
+        $blockers += 'DevRepo could not find the default branch to compare against.'
     }
 
     if ($State.CurrentBranch -eq $State.DefaultBranch) {
@@ -108,7 +108,7 @@ function Get-UpstreamRepairSafety {
     }
 
     if ($UnmergedCommits -lt 0) {
-        $blockers += 'DevTools could not confirm whether this branch has unmerged commits.'
+        $blockers += 'DevRepo could not confirm whether this branch has unmerged commits.'
     }
     elseif ($UnmergedCommits -gt 0) {
         $blockers += "This branch has $UnmergedCommits commit(s) that are not in $($State.DefaultBranch). Review them manually before switching."
@@ -155,7 +155,7 @@ function Get-UpstreamRepairPlan {
             $steps += "Make sure $($State.DefaultBranch) tracks $($State.RemoteName)/$($State.DefaultBranch)."
             $steps += "Refresh and fast-forward $($State.DefaultBranch)."
         }
-        $steps += "Leave $($State.CurrentBranch) in place. DevTools does not delete branches during repair."
+        $steps += "Leave $($State.CurrentBranch) in place. DevRepo does not delete branches during repair."
     }
 
     return [pscustomobject]@{
@@ -399,7 +399,7 @@ function Remove-MergedBranches {
         Deletes only provably merged branches, using safe deletion semantics.
     .DESCRIPTION
         Uses `git branch -d`, never `-D`. If Git refuses because a branch is not
-        fully merged, DevTools reports it and moves on.
+        fully merged, DevRepo reports it and moves on.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$RepoPath,

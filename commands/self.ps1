@@ -43,18 +43,18 @@ switch ($subCommand) {
         exit 0
     }
     default {
-        ShowCommandScreen -Heading 'DevTools Self' -Description @(
-            'Manage DevTools itself — testing, inspection, updates, and PATH setup.'
+        ShowCommandScreen -Heading 'DevRepo Self' -Description @(
+            'Manage DevRepo itself — testing, inspection, updates, and PATH setup.'
         )
         ShowInfo 'Usage:'
-        ShowInfo '  dev self'
-        ShowInfo '  dev self test'
-        ShowInfo '  dev self update'
-        ShowInfo '  dev self version'
-        ShowInfo '  dev self doctor'
-        ShowInfo '  dev self info'
-        ShowInfo '  dev self install'
-        ShowInfo '  dev self uninstall'
-        ShowInfo '  dev self path'
+        ShowInfo '  devrepo self'
+        ShowInfo '  devrepo self test'
+        ShowInfo '  devrepo self update'
+        ShowInfo '  devrepo self version'
+        ShowInfo '  devrepo self doctor'
+        ShowInfo '  devrepo self info'
+        ShowInfo '  devrepo self install'
+        ShowInfo '  devrepo self uninstall'
+        ShowInfo '  devrepo self path'
     }
 }

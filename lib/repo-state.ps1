@@ -16,7 +16,7 @@ function Get-RepositoryHealthCatalog {
     return @(
         [pscustomobject]@{
             Code = 'InvalidRepository'; Label = 'Not a repository'; Severity = 'Problem'; Group = 'Other'
-            Explanation = 'DevTools could not read this folder as a Git repository.'
+            Explanation = 'DevRepo could not read this folder as a Git repository.'
             LocalWork = 'Your files are untouched.'
             Action = 'Open the folder and check whether it was moved, renamed, or never cloned.'
         }
@@ -29,19 +29,19 @@ function Get-RepositoryHealthCatalog {
         [pscustomobject]@{
             Code = 'MergeInProgress'; Label = 'Merge in progress'; Severity = 'Problem'; Group = 'Operation'
             Explanation = 'A merge was started here and has not been finished.'
-            LocalWork = 'Your work is safe. DevTools did not touch this repository.'
+            LocalWork = 'Your work is safe. DevRepo did not touch this repository.'
             Action = 'Finish the merge with a commit, or cancel it, before syncing.'
         }
         [pscustomobject]@{
             Code = 'RebaseInProgress'; Label = 'Rebase in progress'; Severity = 'Problem'; Group = 'Operation'
             Explanation = 'A rebase was started here and has not been finished.'
-            LocalWork = 'Your work is safe. DevTools did not touch this repository.'
+            LocalWork = 'Your work is safe. DevRepo did not touch this repository.'
             Action = 'Continue or abort the rebase before syncing.'
         }
         [pscustomobject]@{
             Code = 'OperationInProgress'; Label = 'Operation in progress'; Severity = 'Problem'; Group = 'Operation'
             Explanation = 'A cherry-pick, revert, or bisect is still running in this repository.'
-            LocalWork = 'Your work is safe. DevTools did not touch this repository.'
+            LocalWork = 'Your work is safe. DevRepo did not touch this repository.'
             Action = 'Finish or cancel the in-progress Git operation before syncing.'
         }
         [pscustomobject]@{
@@ -52,19 +52,19 @@ function Get-RepositoryHealthCatalog {
         }
         [pscustomobject]@{
             Code = 'AuthenticationFailed'; Label = 'Sign-in required'; Severity = 'Problem'; Group = 'Remote'
-            Explanation = 'GitHub refused the connection because DevTools is not signed in for this repository.'
+            Explanation = 'GitHub refused the connection because DevRepo is not signed in for this repository.'
             LocalWork = 'Your work is safe. Nothing was changed.'
-            Action = 'Sign in again, then sync. Run Doctor if GitHub CLI needs attention.'
+            Action = 'Sign in again, then sync. Run devrepo doctor if GitHub CLI needs attention.'
         }
         [pscustomobject]@{
             Code = 'RemoteUnavailable'; Label = 'Remote unavailable'; Severity = 'Attention'; Group = 'Remote'
-            Explanation = 'DevTools could not reach the remote server.'
+            Explanation = 'DevRepo could not reach the remote server.'
             LocalWork = 'Your work is safe. Nothing was changed.'
             Action = 'Check your network connection, then sync again.'
         }
         [pscustomobject]@{
             Code = 'FetchFailed'; Label = 'Refresh failed'; Severity = 'Attention'; Group = 'Remote'
-            Explanation = 'DevTools could not refresh the remote state for this repository.'
+            Explanation = 'DevRepo could not refresh the remote state for this repository.'
             LocalWork = 'Your work is safe. Nothing was changed.'
             Action = 'Show details for the Git error, then sync again.'
         }
@@ -76,20 +76,20 @@ function Get-RepositoryHealthCatalog {
         }
         [pscustomobject]@{
             Code = 'MissingUpstream'; Label = 'Missing upstream'; Severity = 'Attention'; Group = 'Upstream'
-            Explanation = 'This branch is not tracking any remote branch, so DevTools cannot tell whether it is current.'
+            Explanation = 'This branch is not tracking any remote branch, so DevRepo cannot tell whether it is current.'
             LocalWork = 'Your work is safe and stays local.'
             Action = 'Push the branch to set an upstream, or switch to the default branch.'
         }
         [pscustomobject]@{
             Code = 'Diverged'; Label = 'Diverged'; Severity = 'Problem'; Group = 'Diverged'
             Explanation = 'Local and remote branches both contain unique commits.'
-            LocalWork = 'Your commits are safe. DevTools will not merge or rebase for you.'
+            LocalWork = 'Your commits are safe. DevRepo will not merge or rebase for you.'
             Action = 'Review manually before merging or rebasing.'
         }
         [pscustomobject]@{
             Code = 'LocalChanges'; Label = 'Local changes'; Severity = 'Attention'; Group = 'Dirty'
             Explanation = 'This repository has uncommitted changes in the working tree.'
-            LocalWork = 'Your changes are safe. DevTools never stashes or discards them.'
+            LocalWork = 'Your changes are safe. DevRepo never stashes or discards them.'
             Action = 'Review or commit your local changes before syncing.'
         }
         [pscustomobject]@{
@@ -128,7 +128,7 @@ function Get-RepositoryHealthDefinition {
 
     return [pscustomobject]@{
         Code = 'OtherGitError'; Label = 'Git error'; Severity = 'Problem'; Group = 'Other'
-        Explanation = 'Git reported an error DevTools does not recognize.'
+        Explanation = 'Git reported an error DevRepo does not recognize.'
         LocalWork = 'Your work is safe. Nothing was changed.'
         Action = 'Show details for the Git error, or export a diagnostic report.'
     }
@@ -178,7 +178,7 @@ function Test-RepositoryCanFastForward {
     .SYNOPSIS
         The safe-update policy. Pure function.
     .DESCRIPTION
-        DevTools only updates a repository automatically when every one of these
+        DevRepo only updates a repository automatically when every one of these
         is true. Anything else is skipped and explained.
     #>
     param([Parameter(Mandatory = $true)]$Facts)
@@ -248,9 +248,9 @@ function Get-RepositoryStateDetail {
 function Get-RepositoryState {
     <#
     .SYNOPSIS
-        Builds the authoritative repository state object used across DevTools.
+        Builds the authoritative repository state object used across DevRepo.
     .DESCRIPTION
-        Pure function over facts. Repository Health, Sync, Project Info, repair,
+        Pure function over facts. Check project health, Sync, Project details, repair,
         and diagnostic reports all consume this same object.
     #>
     param([Parameter(Mandatory = $true)]$Facts)
@@ -362,7 +362,7 @@ function Get-RepositoryStateSummary {
 function Get-RepositoryFilterDefinitions {
     <#
     .SYNOPSIS
-        Filters offered by the Repository Health screen. Pure data.
+        Filters offered by the Check project health screen. Pure data.
     #>
 
     return @(

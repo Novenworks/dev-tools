@@ -1,3 +1,3 @@
-# Repository Maintenance - sync, health, repair, cleanup, and reporting.
+# Fix repository issues - sync, health, repair, cleanup, and reporting.
 
 Invoke-RepositoryMaintenanceMenu

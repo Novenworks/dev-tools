@@ -1,4 +1,4 @@
-# DevTools Testing
+# DevRepo Testing
 
 ## Why smoke testing exists
 
@@ -6,9 +6,9 @@ Smoke testing is a quick check to make sure the most important features still wo
 
 It is not intended to replace automated testing. The goal is to catch obvious regressions — broken commands, parser errors, or confusing failures — before users see them.
 
-## Why DevTools uses manual smoke testing
+## Why DevRepo uses manual smoke testing
 
-DevTools is a Windows PowerShell CLI that interacts with Git, GitHub CLI, and your local filesystem. Many flows depend on your machine, your GitHub account, and your workspace setup.
+DevRepo is a Windows PowerShell CLI that interacts with Git, GitHub CLI, and your local filesystem. Many flows depend on your machine, your GitHub account, and your workspace setup.
 
 A short manual checklist is the most practical way to validate releases today without building a full test harness.
 
@@ -32,7 +32,7 @@ Automated tests **do not require** optional tools to pass.
 
 When **PSScriptAnalyzer** is not installed, the test runner explains what it is, why it helps, and how to install it — then continues normally.
 
-Install PSScriptAnalyzer for additional PowerShell code quality checks during `dev test`:
+Install PSScriptAnalyzer for additional PowerShell code quality checks during `devrepo test`:
 
 ```powershell
 Install-Module PSScriptAnalyzer -Scope CurrentUser

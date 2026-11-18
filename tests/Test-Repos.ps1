@@ -719,7 +719,6 @@ try {
     foreach ($module in @('repo-git', 'repo-state', 'repo-sync', 'repo-repair', 'repo-report', 'repo-ui')) {
         Assert-True ($coreContent -match [regex]::Escape($module)) "dev-core.ps1 loads lib/$module.ps1"
     }
-    Assert-True ($coreContent -match 'dev sync|sync, update' -or $coreContent -match 'clone, sync') 'dev-core lists sync as a valid command'
 
     # -----------------------------------------------------------------------
     # 26. Sync concurrency

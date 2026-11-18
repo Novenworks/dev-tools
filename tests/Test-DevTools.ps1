@@ -71,6 +71,7 @@ Write-Host ''
 $requiredFiles = @(
     'dev-core.ps1'
     'dev.cmd'
+    'devrepo.cmd'
     'install.ps1'
     'config.example.json'
     'README.md'
@@ -295,7 +296,7 @@ if (Test-Path -LiteralPath $gitignoreePath) {
 }
 
 # README content checks
-Test-ReadmeContains -Text 'DevTools' -Label 'DevTools' | Out-Null
+Test-ReadmeContains -Text 'DevRepo' -Label 'DevRepo' | Out-Null
 Test-ReadmeContains -Text 'Installation' -Label 'Installation' | Out-Null
 Test-ReadmeContains -Text 'Quick Start' -Label 'Quick Start' | Out-Null
 Test-ReadmeContains -Text 'Commands' -Label 'Commands' | Out-Null
@@ -352,24 +353,12 @@ foreach ($commandName in $mainCommands) {
     }
 }
 
-# Home status focal accepts empty attention items when all checks pass
 try {
-    $DevToolsRoot = $ProjectRoot
-    . (Join-Path $ProjectRoot 'lib\utils.ps1')
-    . (Join-Path $ProjectRoot 'lib\copy.ps1')
-    . (Join-Path $ProjectRoot 'lib\ui.ps1')
-    . (Join-Path $ProjectRoot 'lib\home.ps1')
-
-    $readyStatus = [pscustomobject]@{
-        OverallStatus     = 'Ready to Build'
-        RequiredAttention = 0
-    }
-
-    Show-HomeStatusFocal -Status $readyStatus -AttentionItems @() | Out-Null
-    Write-TestPass 'Show-HomeStatusFocal accepts empty AttentionItems'
+    & (Join-Path $ProjectRoot 'tests/Test-DevRepoCli.ps1')
+    Write-TestPass 'DevRepo CLI tests passed'
 }
 catch {
-    Write-TestFailure "Show-HomeStatusFocal empty AttentionItems: $($_.Exception.Message)"
+    Write-TestFailure "DevRepo CLI tests: $($_.Exception.Message)"
 }
 
 # Repository intelligence tests run in a child process because they create

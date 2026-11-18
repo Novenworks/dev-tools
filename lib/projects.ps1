@@ -4,7 +4,7 @@ function Test-ProjectIsGitRepo {
         [string]$Path
     )
 
-    return Test-Path (Join-Path $Path '.git')
+    return Test-Path -LiteralPath (Join-Path $Path '.git')
 }
 
 function Get-WorkspaceProjects {
@@ -13,13 +13,13 @@ function Get-WorkspaceProjects {
         [string]$WorkspacePath
     )
 
-    if (-not (Test-Path $WorkspacePath)) {
+    if (-not (Test-Path -LiteralPath $WorkspacePath -PathType Container)) {
         return @()
     }
 
     $entries = @()
 
-    foreach ($dir in Get-ChildItem -Path $WorkspacePath -Directory -ErrorAction SilentlyContinue) {
+    foreach ($dir in Get-ChildItem -LiteralPath $WorkspacePath -Directory -ErrorAction SilentlyContinue) {
         $isGit = Test-ProjectIsGitRepo -Path $dir.FullName
         $entries += [pscustomobject]@{
             Name     = $dir.Name
@@ -108,23 +108,6 @@ function Get-ProjectTypeLabel {
     return '[folder]'
 }
 
-function Show-ProjectSearchResults {
-    param(
-        [Parameter(Mandatory = $true)][array]$Projects
-    )
-
-    Write-Host 'Results' -ForegroundColor Cyan
-    Write-Host ''
-
-    for ($i = 0; $i -lt $Projects.Count; $i++) {
-        $project = $Projects[$i]
-        $typeLabel = Get-ProjectTypeLabel -IsGit $project.IsGit
-        Write-Host ("  {0}  {1} {2}" -f ($i + 1), $project.Name, $typeLabel)
-    }
-
-    Write-Host ''
-}
-
 function Show-ProjectNoMatchMenu {
     param(
         [Parameter(Mandatory = $true)][string]$Query
@@ -159,17 +142,34 @@ function Open-ProjectWithEditor {
     $editorName = Get-EditorDisplayName -Editor $editor
     $target = $Project.FullName
 
-    if ($editor -eq 'explorer') {
-        ShowInfo "Opening $projectName in Explorer..."
-        explorer $target
+    if (-not (Test-CommandExists $editor)) {
+        ShowWarning "$editorName is unavailable."
+        if (-not (Test-CommandExists 'explorer')) {
+            ShowInfo 'Next: open Settings and choose an installed editor.'
+            return
+        }
+        $editor = 'explorer'
+        $editorName = 'Explorer'
+        ShowInfo 'Opening the folder in Explorer instead.'
     }
-    elseif (Test-CommandExists $editor) {
-        ShowInfo "Opening $projectName in $editorName..."
-        & $editor $target
+
+    try {
+        if ($editor -eq 'explorer') {
+            Start-Process -FilePath 'explorer.exe' -ArgumentList ('"{0}"' -f $target) -ErrorAction Stop
+        }
+        else {
+            & $editor $target
+            if (-not $?) {
+                ShowWarning "$editorName reported an error while opening $projectName."
+                ShowInfo 'Next: check your editor in Settings or open the folder directly.'
+                return
+            }
+        }
     }
-    else {
-        ShowWarning "$editorName was not found. Opening in Explorer instead."
-        explorer $target
+    catch {
+        ShowWarning "Could not launch $editorName for $projectName."
+        ShowInfo $_.Exception.Message
+        return
     }
 
     if (-not $SkipRecent) {
@@ -177,7 +177,7 @@ function Open-ProjectWithEditor {
     }
 
     Write-Host ''
-    ShowSuccess 'Have a productive coding session.'
+    ShowSuccess "Launch requested for $projectName in $editorName."
 }
 
 function Open-WorkspaceProject {
@@ -193,7 +193,7 @@ function Resolve-ProjectFromQuery {
         [Parameter(Mandatory = $true)][string]$Query
     )
 
-    if (-not (Test-Path $Config.workspacePath)) {
+    if (-not (Test-Path -LiteralPath $Config.workspacePath -PathType Container)) {
         return [pscustomobject]@{
             Projects = @()
             Error    = 'workspace'
@@ -218,22 +218,21 @@ function Select-ProjectFromResults {
         return $null
     }
 
-    if ($Results.Count -eq 1) {
-        return $Results[0]
-    }
-
-    Show-ProjectSearchResults -Projects $Results
-    Write-Host $Prompt -ForegroundColor DarkGray
-    $choice = Read-Host 'Project number'
-
-    if ($choice -match '^\d+$') {
-        $index = [int]$choice - 1
-        if ($index -ge 0 -and $index -lt $Results.Count) {
-            return $Results[$index]
+    ShowInfo $Prompt
+    $options = @(
+        for ($i = 0; $i -lt $Results.Count; $i++) {
+            $project = $Results[$i]
+            $type = Get-ProjectTypeLabel -IsGit $project.IsGit
+            [pscustomobject]@{ Key = [string]($i + 1); Label = "$($project.Name) ($type)" }
         }
+        [pscustomobject]@{ Key = '0'; Label = 'Back' }
+    )
+    $choice = Read-DevRepoMenuChoice -Options $options -BackKey '0'
+    $number = 0
+    if ([int]::TryParse($choice, [ref]$number) -and $number -ge 1 -and $number -le $Results.Count) {
+        return $Results[$number - 1]
     }
-
-    ShowWarning 'Enter a valid project number from the list.'
+    if ($choice -ne '0') { ShowWarning 'Choose a project number from the list.' }
     return $null
 }
 
@@ -245,7 +244,7 @@ function Select-Project {
         [switch]$AllowExactConfirm
     )
 
-    if (-not (Test-Path $Config.workspacePath)) {
+    if (-not (Test-Path -LiteralPath $Config.workspacePath -PathType Container)) {
         ShowWarning 'Your workspace folder is not set up yet.'
         ShowInfo 'Next step: run Configure first.'
         return $null
@@ -255,7 +254,7 @@ function Select-Project {
 
     if ($projects.Count -eq 0) {
         ShowInfo 'No projects found yet.'
-        ShowInfo 'Next step: run Clone missing repositories.'
+        ShowInfo 'Next step: run Download new projects.'
         return $null
     }
 
@@ -267,7 +266,8 @@ function Select-Project {
             $InitialQuery = ''
         }
         else {
-            $query = Read-Host 'Search'
+            $query = Read-Host 'Search (Enter lists all, :back returns)'
+            if ($null -eq $query -or $query.Trim() -eq ':back') { return $null }
             $searchTerm = if ($null -eq $query) { '' } else { $query.Trim() }
         }
 
@@ -281,7 +281,6 @@ function Select-Project {
                 '1' { continue }
                 '2' {
                     $results = @(Get-WorkspaceProjects -WorkspacePath $Config.workspacePath)
-                    Show-ProjectSearchResults -Projects $results
                 }
                 '3' { return $null }
                 default {
@@ -300,16 +299,7 @@ function Select-Project {
 
             continue
         }
-        else {
-            Show-ProjectSearchResults -Projects $results
-        }
-
-        $selected = Select-ProjectFromResults -Results $results -Prompt 'Select a project:'
-        if ($selected) {
-            return $selected
-        }
-
-        Wait-ForKey -Message 'Press Enter to try again'
+        return (Select-ProjectFromResults -Results $results -Prompt 'Choose a project from the results.')
     }
 }
 
@@ -346,7 +336,8 @@ function Invoke-OpenProjectByName {
 
 function Invoke-OpenProjectFlow {
     $project = Select-Project -Heading 'Open Project' -Description @(
-        'Search by project name, or press Enter to list all projects.'
+        'Search by project name, then choose a result to launch your editor.'
+        'Opened projects are saved to your local recent list.'
     ) -AllowExactConfirm
 
     if ($project) {

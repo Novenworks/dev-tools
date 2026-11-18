@@ -1,8 +1,8 @@
-# Contributing to DevTools
+# Contributing to DevRepo
 
-Thank you for helping improve DevTools. Contributions of all sizes are welcome — from typo fixes to new features.
+Thank you for helping improve DevRepo. Contributions of all sizes are welcome — from typo fixes to new features.
 
-DevTools is an open-source project by Novenworks. The goal is simple: help developers spend less time managing projects and more time building.
+DevRepo is an open-source project by Novenworks. The goal is simple: help developers spend less time managing projects and more time building.
 
 ## Ways to contribute
 
@@ -27,7 +27,7 @@ README unclear? Help text confusing? Open a **Documentation** issue or submit a 
 
 ## Labels and milestones
 
-DevTools uses GitHub labels and milestones to organize work.
+DevRepo uses GitHub labels and milestones to organize work.
 
 - See [`.github/labels.md`](.github/labels.md) for recommended labels.
 - See [`.github/milestones.md`](.github/milestones.md) for release planning.
@@ -38,7 +38,7 @@ DevTools uses GitHub labels and milestones to organize work.
 1. Fork the repository.
 2. Create a focused branch for your change.
 3. Keep changes small and easy to review.
-4. Test your change with `.\dev.cmd` on Windows and run `tests/Test-DevTools.ps1`.
+4. Test your change with `.\devrepo.cmd` on Windows and run `tests/Test-DevTools.ps1`.
 
 Global install smoke test (optional):
 
@@ -60,17 +60,17 @@ You do not need to understand the entire codebase to help. Documentation fixes, 
 ```powershell
 git clone https://github.com/Novenworks/dev-tools.git C:\Projects\dev-tools
 cd C:\Projects\dev-tools
-.\dev.cmd
+.\devrepo.cmd
 ```
 
-Use `.\dev.cmd` to avoid PowerShell execution policy issues.
+Use `.\devrepo.cmd` to avoid PowerShell execution policy issues.
 
 ## Before submitting a pull request
 
 Please run:
 
 ```powershell
-dev test
+devrepo test
 ```
 
 Or invoke the test script directly:
@@ -79,7 +79,7 @@ Or invoke the test script directly:
 pwsh ./tests/Test-DevTools.ps1
 ```
 
-`dev test` also runs `tests/Test-Deploy.ps1`, which validates Deployment Manager against fully mocked GitHub and Vercel services. Automated tests must never contact a real service or create a real Vercel project.
+`devrepo test` also runs `tests/Test-Deploy.ps1`, which validates Deployment Manager against fully mocked GitHub and Vercel services. Automated tests must never contact a real service or create a real Vercel project.
 
 If `pwsh` is unavailable, use:
 

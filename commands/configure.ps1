@@ -15,15 +15,15 @@ function Read-WizardSetting {
 function Invoke-ConfigureWizard {
     while ($true) {
         ShowCommandScreen -Heading 'Setup Wizard' -Description @(
-            "Let's configure DevTools for your computer."
-            'This usually takes less than a minute.'
+            "Let's configure DevRepo for your computer."
+            'Choose your project folder, GitHub accounts and editor. Review your choices before saving.'
         )
 
         $currentOwners = (@($Config.githubOwners) | ForEach-Object { $_.ToString() }) -join ', '
 
         $workspacePath = Read-WizardSetting `
             -Label 'Workspace' `
-            -Explanation 'This is where DevTools stores and manages your Git repositories.' `
+            -Explanation 'This is where DevRepo stores and manages your Git repositories.' `
             -CurrentValue $Config.workspacePath `
             -Hint 'Or type a new workspace path:'
 
@@ -57,8 +57,9 @@ function Invoke-ConfigureWizard {
         ShowReviewBlock -Label 'Default Editor' -Value (Get-EditorDisplayName -Editor $defaultEditor)
         ShowReviewBlock -Label 'Backup Message' -Value $autoBackupMessage
 
-        if (-not (ShowSavePrompt)) {
-            continue
+        if (-not (Confirm-DevRepoAction -Label 'Save settings and create the workspace folder if needed')) {
+            ShowInfo 'Setup canceled. Your settings were not saved.'
+            return
         }
 
         $newConfig = [pscustomobject]@{
@@ -70,15 +71,28 @@ function Invoke-ConfigureWizard {
         }
 
         try {
+            $storedConfig = $null
+            try { $storedConfig = Import-DevToolsConfigRaw } catch { }
+            if ($storedConfig) {
+                foreach ($property in $storedConfig.PSObject.Properties) {
+                    if (-not $newConfig.PSObject.Properties[$property.Name]) {
+                        $newConfig | Add-Member -NotePropertyName $property.Name -NotePropertyValue $property.Value
+                    }
+                }
+            }
+
+            $validation = Test-DevToolsConfigValid -ConfigObject $newConfig
+            if (-not $validation.Valid) { throw ($validation.Errors -join ' ') }
+            Ensure-Directory -Path $workspacePath
             Save-DevToolsConfig -ConfigObject $newConfig
             $script:Config = Set-ScriptConfig
-            Ensure-Directory -Path $script:Config.workspacePath
 
             Write-Host ''
             Show-SavedConfiguration
 
             if ($script:FirstRun) {
-                ShowSuccess 'Welcome to DevTools.'
+                ShowSuccess 'Welcome to DevRepo.'
+                ShowInfo 'Choose D on Home to check GitHub access and see sign-in steps.'
                 $script:FirstRun = $false
             }
 

@@ -1,8 +1,8 @@
-# DevTools Configuration
+# DevRepo Configuration
 
-DevTools stores settings in `config.json` at the installation root. This file is local and gitignored.
+DevRepo stores settings in `config.json` at the installation root. This file is local and gitignored.
 
-On first run, DevTools creates `config.json` from `config.example.json`.
+On first run, DevRepo creates `config.json` from `config.example.json`.
 
 ---
 
@@ -15,7 +15,7 @@ On first run, DevTools creates `config.json` from `config.example.json`.
 | `defaultEditor` | Editor command for Open Project | `cursor`, `code`, `explorer` |
 | `autoBackupMessage` | Default commit message for backup | `Auto backup` |
 | `autoUpdate` | Reserved for future auto-update behavior | `false` |
-| `syncConcurrency` | How many repositories `dev sync` refreshes at once (default 8, range 1-32, 1 = sequential) |
+| `syncConcurrency` | How many repositories `devrepo sync` refreshes at once (default 8, range 1-32, 1 = sequential) |
 | `deployments` | Deployment Manager settings (optional) | see below |
 
 ---
@@ -57,7 +57,7 @@ The `deployments` section is optional. Configuration files written before Deploy
 | `repositoryFilters.includeArchived` | Consider archived repositories | `false` |
 | `productionBranchOverrides` | Per-repository production branch, keyed by `Repo` or `Owner/Repo` | `{}` |
 | `projectMappings` | Explicit repository to Vercel project mapping | `{}` |
-| `httpHealthCheck` | Run one lightweight HTTP check during `dev deploy verify` | `true` |
+| `httpHealthCheck` | Run one lightweight HTTP check during `devrepo deploy verify` | `true` |
 | `deploymentTimeoutSeconds` | How long sync waits for a deployment | `600` |
 | `pollIntervalSeconds` | How often sync checks deployment state | `10` |
 | `maxRepositoriesPerOwner` | Upper bound when enumerating an owner | `1000` |
@@ -66,7 +66,7 @@ Repository names in the filter lists match either `Repo-Name` or `Owner/Repo-Nam
 
 ### Vercel token
 
-Your Vercel token is **never** stored in `config.json`. DevTools reads it from the `VERCEL_TOKEN` environment variable only, and never writes it to a log or report.
+Your Vercel token is **never** stored in `config.json`. DevRepo reads it from the `VERCEL_TOKEN` environment variable only, and never writes it to a log or report.
 
 ```powershell
 $env:VERCEL_TOKEN = "your-token"
@@ -92,8 +92,8 @@ See [deployments.md](deployments.md) for the full guide.
 Prefer the guided menus:
 
 ```powershell
-dev configure    # Full setup wizard
-dev settings     # Change one setting at a time
+devrepo configure    # Full setup wizard
+devrepo settings     # Change one setting at a time
 ```
 
 Manual editing of `config.json` is supported but rarely needed.

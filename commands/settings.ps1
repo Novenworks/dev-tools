@@ -1,19 +1,20 @@
 function Show-SettingsMenu {
     while ($true) {
         ShowCommandScreen -Heading 'Settings' -Description @(
-            'Update your DevTools preferences.'
+            'Choose which local preference to change. Changes save to this DevRepo installation.'
+            'Workspace, editor and GitHub account settings apply the next time you open or download a project.'
         ) -Clear
 
-        Write-Host '  1  Workspace'
-        Write-Host '  2  GitHub Owners'
-        Write-Host '  3  Default Editor'
-        Write-Host '  4  Backup Commit Message'
-        Write-Host '  5  Automatic Updates'
-        Write-Host '  6  About DevTools'
-        Write-Host '  7  Back'
-        Write-Host ''
-
-        $choice = Read-Host 'Choose an option'
+        $choices = @(
+            [pscustomobject]@{ Key = '1'; Label = 'Workspace' }
+            [pscustomobject]@{ Key = '2'; Label = 'GitHub Owners' }
+            [pscustomobject]@{ Key = '3'; Label = 'Default Editor' }
+            [pscustomobject]@{ Key = '4'; Label = 'Backup Commit Message' }
+            [pscustomobject]@{ Key = '5'; Label = 'Automatic Updates' }
+            [pscustomobject]@{ Key = '6'; Label = 'About DevRepo' }
+            [pscustomobject]@{ Key = '7'; Label = 'Back' }
+        )
+        $choice = Read-DevRepoMenuChoice -Options $choices -BackKey '7'
 
         switch ($choice) {
             '1' {

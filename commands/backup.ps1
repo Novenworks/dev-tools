@@ -1,5 +1,5 @@
 ShowCommandScreen -Heading 'Backup Changes' -Description @(
-    'DevTools found repositories with uncommitted changes.'
+    'DevRepo found repositories with uncommitted changes.'
 )
 
 if (-not (Test-RequireGit)) { exit 1 }

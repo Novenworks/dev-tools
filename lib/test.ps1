@@ -42,10 +42,10 @@ function Show-DevelopmentEnvironmentSummary {
     Write-Host ''
 
     if ($gitInstalled -and $ghInstalled) {
-        Write-Host '  Everything required for DevTools development is installed.' -ForegroundColor DarkGray
+        Write-Host '  Everything required for DevRepo development is installed.' -ForegroundColor DarkGray
     }
     else {
-        Write-Host '  Some required tools are missing for DevTools development.' -ForegroundColor DarkGray
+        Write-Host '  Some required tools are missing for DevRepo development.' -ForegroundColor DarkGray
     }
 
     Write-Host ''
@@ -134,7 +134,7 @@ function Invoke-OptionalPSScriptAnalyzerLint {
         -Installed $installed `
         -About @(
             'PSScriptAnalyzer provides additional PowerShell code quality checks.'
-            'DevTools can run without it.'
+            'DevRepo can run without it.'
         ) `
         -Recommended @(
             'Install it to enable linting during automated tests.'
@@ -185,7 +185,7 @@ function Invoke-OptionalPSScriptAnalyzerLint {
 
 function Invoke-DevToolsTestSuite {
     Write-Host ''
-    Write-Host 'DevTools Test Runner' -ForegroundColor Cyan
+    Write-Host 'DevRepo Test Runner' -ForegroundColor Cyan
     Write-Host ''
     Write-Host 'Locating installation...' -ForegroundColor DarkGray
 
@@ -196,7 +196,7 @@ function Invoke-DevToolsTestSuite {
         Write-Host ''
         ShowError 'Unable to locate:'
         ShowInfo 'tests\Test-DevTools.ps1'
-        ShowInfo 'Your DevTools installation may be incomplete.'
+        ShowInfo 'Your DevRepo installation may be incomplete.'
         Write-Host ''
         return 1
     }

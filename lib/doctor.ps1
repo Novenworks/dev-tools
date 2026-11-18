@@ -1,18 +1,3 @@
-function Get-HomeAttentionItems {
-    $status = Get-DevToolsSystemStatus
-    $priority = @('gh-auth', 'gh', 'git', 'workspace', 'configuration', 'editor')
-
-    $items = @()
-    foreach ($id in $priority) {
-        $check = $status.RequiredChecks | Where-Object { $_.Id -eq $id -and -not $_.Passed }
-        if ($check) {
-            $items += $check
-        }
-    }
-
-    return $items
-}
-
 function Get-ConfigurationCheckState {
     $configExists = Test-DevToolsConfigFileExists
     $configValid = $false
@@ -75,7 +60,7 @@ function Get-DevToolsRequiredChecks {
     $workspaceExists = $false
 
     if ($Config -and $Config.workspacePath) {
-        $workspaceExists = Test-Path $Config.workspacePath
+        $workspaceExists = Test-Path -LiteralPath $Config.workspacePath -PathType Container
     }
 
     $gitVersion = Get-ToolVersionNumber -Command 'git'
@@ -87,6 +72,7 @@ function Get-DevToolsRequiredChecks {
     }
 
     $editorSelected = $Config -and -not [string]::IsNullOrWhiteSpace($Config.defaultEditor)
+    $editorAvailable = $editorSelected -and (Test-CommandExists $Config.defaultEditor)
 
     return @(
         (New-DoctorCheck -Id 'git' -Label 'Git' -Passed ([bool]$gitVersion) -Version $gitVersion `
@@ -113,10 +99,10 @@ function Get-DevToolsRequiredChecks {
             -StatusText $configuration.Detail `
             -WhyItMatters $catalog.configuration.WhyItMatters `
             -SuggestedAction $(if ($configuration.Passed) { $catalog.configuration.InstalledAction } else { $catalog.configuration.MissingAction })),
-        (New-DoctorCheck -Id 'editor' -Label 'Default Editor' -Passed $editorSelected `
-            -StatusText $(if ($editorSelected) { (Get-EditorDisplayName -Editor $Config.defaultEditor) } else { 'Not selected' }) `
+        (New-DoctorCheck -Id 'editor' -Label 'Default Editor' -Passed $editorAvailable `
+            -StatusText $(if ($editorAvailable) { Get-EditorDisplayName -Editor $Config.defaultEditor } elseif ($editorSelected) { 'Configured editor not found' } else { 'Not selected' }) `
             -WhyItMatters $catalog.editor.WhyItMatters `
-            -SuggestedAction $(if ($editorSelected) { $catalog.editor.InstalledAction } else { $catalog.editor.MissingAction }))
+            -SuggestedAction $(if ($editorAvailable) { $catalog.editor.InstalledAction } else { $catalog.editor.MissingAction }))
     )
 }
 
@@ -221,7 +207,7 @@ function Invoke-DoctorInteractiveFixes {
                         ShowSuccess "$(Get-DevToolsDisplaySymbol -Name 'success-mark') GitHub login successful."
                     }
                     else {
-                        ShowInfo 'Sign-in may still be in progress. Run Doctor again if needed.'
+                        ShowInfo 'Sign-in may still be in progress. Run devrepo doctor again if needed.'
                     }
 
                     $acted = $true
@@ -243,7 +229,7 @@ function Invoke-DoctorInteractiveFixes {
                     }
                     else {
                         ShowInfo 'You may need to restart PowerShell before Node.js is detected.'
-                        ShowInfo 'Re-run Doctor after restarting your terminal.'
+                        ShowInfo 'Re-run devrepo doctor after restarting your terminal.'
                     }
 
                     $acted = $true
@@ -255,11 +241,6 @@ function Invoke-DoctorInteractiveFixes {
             break
         }
     }
-}
-
-function Show-HomeSystemStatus {
-    # Deprecated: use Show-HomeScreen in lib/home.ps1
-    return (Get-DevToolsSystemStatus)
 }
 
 function Show-DoctorCheckResults {
@@ -295,7 +276,7 @@ function Show-DoctorDeploymentSection {
     .SYNOPSIS
         Reports Deployment Manager readiness without affecting overall system status.
     .DESCRIPTION
-        Vercel is optional. Users who never run "dev deploy" stay "Ready to Build"
+        Vercel is optional. Users who never run "devrepo deploy" stay "Ready to Build"
         whether or not a Vercel token is present.
     #>
     if (-not (Get-Command Get-DeploymentPrerequisites -ErrorAction SilentlyContinue)) {
@@ -312,6 +293,6 @@ function Show-DoctorDeploymentSection {
 
     Show-DeploymentPrerequisites -State $state
 
-    ShowInfo 'Deployment Manager is optional. DevTools is ready without it.'
+    ShowInfo 'Deployment Manager is optional. DevRepo is ready without it.'
     Write-Host ''
 }

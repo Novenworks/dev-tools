@@ -1,9 +1,9 @@
-# DevTools — Project Context
+# DevRepo — Project Context
 
 **Version:** v0.5.0 (see `VERSION`)  
 **Status:** Active Development  
 **Repository:** https://github.com/Novenworks/dev-tools  
-**Product:** DevTools  
+**Product:** DevRepo
 **Built by:** Novenworks
 
 > **Internal document.** This file is the source of truth for AI assistants, maintainers, and contributors. It is not public user documentation. For users, see `README.md` and `docs/`.
@@ -14,29 +14,29 @@
 
 Help developers spend less time managing projects and more time building.
 
-DevTools is a Windows-first PowerShell CLI that simplifies working across multiple local Git repositories through a beginner-friendly command-line experience. The focus is reducing repetitive development tasks while improving developer experience (DX).
+DevRepo is a Windows-first PowerShell CLI that simplifies working across multiple local Git repositories through a beginner-friendly command-line experience. The focus is reducing repetitive development tasks while improving developer experience (DX).
 
 ---
 
 ## Vision
 
-DevTools should become the first command developers launch before they begin coding.
+DevRepo should become the first command developers launch before they begin coding.
 
 Instead of remembering repository names, Git commands, folder locations, setup steps, and editor commands, users should run:
 
 ```text
-dev
+devrepo
 ```
 
 and manage their development workspace from one place.
 
-DevTools complements Git, GitHub CLI, Cursor, VS Code, and GitHub Desktop. It does not replace them.
+DevRepo complements Git, GitHub CLI, Cursor, VS Code, and GitHub Desktop. It does not replace them.
 
 ---
 
 ## Product Philosophy
 
-DevTools exists to remove friction.
+DevRepo exists to remove friction.
 
 Every feature should answer one question: **Does this save developers time every day?**
 
@@ -82,7 +82,7 @@ Small improvements used every day are more valuable than large features used occ
 
 ## Current Features
 
-At the time of writing, DevTools includes:
+At the time of writing, DevRepo includes:
 
 **Setup and navigation**
 
@@ -100,14 +100,14 @@ At the time of writing, DevTools includes:
 
 **Repository workflows (Repository Intelligence, v0.5.0)**
 
-- Clone missing GitHub repositories (`gh`, no GitHub API in DevTools)
+- Clone missing GitHub repositories (`gh`, no GitHub API in DevRepo)
 - One shared repository state model: facts (`repo-git.ps1`) -> pure classification (`repo-state.ps1`) -> everything else
-- `dev sync` — fetch/prune, classify, and fast-forward only provably safe repositories; `dev update` is an alias
-- Repository Health (`dev status`) — counts plus filters for attention, modified, behind, ahead, diverged, broken upstreams, and blocked repositories
+- `devrepo sync` — fetch/prune, classify, and fast-forward only provably safe repositories; `devrepo update` is an alias
+- Repository Health (`devrepo status`) — counts plus filters for attention, modified, behind, ahead, diverged, broken upstreams, and blocked repositories
 - Detailed classifications with explanation, local-work reassurance, and recommended action
 - Guided upstream repair for deleted remote branches (the AI agent branch case)
 - Safe merged-branch cleanup (`git branch -d` only, never `-D`, never unmerged)
-- Repository Maintenance menu (`dev repos`) and single-repository actions
+- Repository Maintenance menu (`devrepo repos`) and single-repository actions
 - Diagnostic reports in the gitignored `reports/repositories/` folder
 - Parallel remote refresh so a ~300-repository sync is bound by throughput, not by one round trip at a time
 - Compact progress feedback at ~300-repository scale
@@ -121,7 +121,7 @@ At the time of writing, DevTools includes:
 
 **Deployments (optional)**
 
-- Deployment Manager (`dev deploy`) — Vercel portfolio audit, planning, onboarding, and verification
+- Deployment Manager (`devrepo deploy`) — Vercel portfolio audit, planning, onboarding, and verification
 - Read-only `audit`, `plan`, `verify`, `status`; mutating `sync` behind explicit confirmation
 - Conservative eligibility rules, safe repository/project matching, idempotent onboarding
 - Machine-readable reports in the gitignored `reports/` folder
@@ -132,22 +132,22 @@ At the time of writing, DevTools includes:
 - Manual smoke test checklist (`docs/testing/smoke-test.md`)
 - Automated validation (`tests/Test-DevTools.ps1`, GitHub Actions CI)
 - Behavioral repository tests (`tests/Test-Repos.ps1`) using throwaway Git fixtures and local bare remotes
-- `dev test` — run validation from any directory
-- `dev self` — test, inspect, update, and manage PATH for DevTools itself
-- Global install via `install.ps1` or `dev self install` (User PATH only)
+- `devrepo test` — run validation from any directory
+- `devrepo self` — test, inspect, update, and manage PATH for DevRepo itself
+- Global install via `install.ps1` or `devrepo self install` (User PATH only)
 - GitHub issue templates, labels/milestones docs, seed issue list
 
-DevTools dogfoods itself through `dev self` and `dev test`.
+DevRepo dogfoods itself through `devrepo self` and `devrepo test`.
 
 **Commands (entry point: `dev` / `dev.cmd`)**
 
 `home`, `menu`, `quick`, `recent`, `info`, `repos`, `test`, `self`, `configure`, `settings`, `doctor`, `clone`, `sync`, `update`, `status`, `backup`, `open`, `deploy`, `help`
 
-`dev update` is preserved as an alias for `dev sync`. Do not break it.
+`devrepo update` is preserved as an alias for `devrepo sync`. Do not break it.
 
-`dev self install` adds the installation folder to the **User** PATH only (no admin, no Machine PATH).
+`devrepo self install` adds the installation folder to the **User** PATH only (no admin, no Machine PATH).
 
-DevTools should increasingly dogfood itself. Commands under `dev self` are responsible for testing, inspecting, and safely updating the DevTools installation.
+DevRepo should increasingly dogfood itself. Commands under `devrepo self` are responsible for testing, inspecting, and safely updating the DevRepo installation.
 
 Update this section when features ship or are removed.
 
@@ -155,12 +155,12 @@ Update this section when features ship or are removed.
 
 ## Non-Goals
 
-DevTools is intentionally **not**:
+DevRepo is intentionally **not**:
 
 - a Git replacement
 - an IDE
 - a package manager
-- a deployment platform (DevTools *manages* deployments on Vercel; it never becomes a host or build system of its own)
+- a deployment platform (DevRepo *manages* deployments on Vercel; it never becomes a host or build system of its own)
 - a cloud service
 - a project management application
 - cross-platform (today — Windows only)
@@ -176,7 +176,7 @@ Maintain a focused scope.
 Shipped in this release:
 
 - Shared repository state model across status, sync, Project Info, repair, and reporting
-- `dev sync` with fast-forward-only bulk updates (`dev update` preserved)
+- `devrepo sync` with fast-forward-only bulk updates (`devrepo update` preserved)
 - Repository Health with workspace counts and filters
 - Actionable classifications replacing "Could not update"
 - Guided upstream repair and safe merged-branch cleanup
@@ -284,11 +284,11 @@ VERSION                    Single source for version string
 - Avoid duplicated code; prefer shared helpers in `lib/projects.ps1` for search/open flows.
 - Keep modules focused.
 - Do not use the GitHub REST API directly — use GitHub CLI (`gh`), including `gh api`, where needed.
-- Deployment discovery and reporting must stay read-only. Only `dev deploy sync` mutates, and only after explicit confirmation.
+- Deployment discovery and reporting must stay read-only. Only `devrepo deploy sync` mutates, and only after explicit confirmation.
 - Repository state has one source of truth. Do not add parallel Git status parsing to commands.
 - Keep the layers separate: acquisition -> classification -> recommended action -> rendering -> mutation. Classification stays pure and testable without Git.
 - Prefer Git plumbing (`rev-parse`, `status --porcelain=v2`, `for-each-ref`, `symbolic-ref`, `rev-list`) over parsing localized Git prose.
-- DevTools must never automatically run `reset`, `clean`, `stash`, any force operation, conflict resolution, merges or rebases of diverged history, commits, pushes, branch switches that risk local work, or deletion of unmerged branches. When uncertain: skip and explain.
+- DevRepo must never automatically run `reset`, `clean`, `stash`, any force operation, conflict resolution, merges or rebases of diverged history, commits, pushes, branch switches that risk local work, or deletion of unmerged branches. When uncertain: skip and explain.
 - Never store credentials in tracked files. Deployment credentials come from the environment.
 - Do not build a provider plugin framework. Vercel is the supported provider today.
 - Do not rewrite `dev-core.ps1` into a monolith.
@@ -339,7 +339,7 @@ Avoid duplicating information across files. README introduces; PROJECT_CONTEXT g
 
 ## UX Philosophy
 
-DevTools should feel like an application — not a collection of scripts.
+DevRepo should feel like an application — not a collection of scripts.
 
 **Home** answers: *Am I ready to build?*  
 **Doctor** answers: *Why is this happening? How do I fix it?*
@@ -430,7 +430,7 @@ Significant decisions (append new entries; do not delete history).
 | — | **`dev.cmd` as recommended launcher** | Avoids execution policy friction for beginners. |
 | — | **Home as default command** | Answers readiness first; menu is secondary. |
 | — | **Doctor vs Home split** | Home = readiness at a glance; Doctor = detailed diagnostics and fixes. |
-| — | **No GitHub API in DevTools** | Use `gh` CLI only; simpler auth and maintenance. |
+| — | **No GitHub API in DevRepo** | Use `gh` CLI only; simpler auth and maintenance. |
 | — | **Roadmap via GitHub Issues** | No automatic issue creation; `.github/ISSUES_TO_CREATE.md` for manual seeding. |
 | — | **README stays concise** | Detailed commands in `docs/commands.md`; README is the public landing page. |
 | — | **PROJECT_CONTEXT.md exists** | Single internal doc for AI and maintainers; reduces context loss across sessions. |
@@ -439,21 +439,21 @@ Significant decisions (append new entries; do not delete history).
 | — | **Backup always confirms** | Safety over automation; no silent commits or pushes. |
 | — | **Display symbols with ASCII fallback** | `Get-DevToolsDisplaySymbol` avoids Unicode rendering errors on legacy consoles. |
 | — | **Home accepts empty attention items** | `[AllowEmptyCollection()]` plus ready-state copy when all required checks pass. |
-| — | **User PATH via `dev self install`** | Safe global `dev` access; User PATH only; conflict detection before install. |
+| — | **User PATH via `devrepo self install`** | Safe global `dev` access; User PATH only; conflict detection before install. |
 | — | **Repository health uses one shared state model consumed by status, sync, repair, and reporting** | Removes duplicated Git parsing across commands and keeps every screen consistent. |
 | — | **Bulk repository sync is conservative and fast-forward-only. Unsafe repository states are classified and reported rather than automatically modified** | Losing local work is worse than an out-of-date repository. When uncertain, skip and explain. |
 | — | **Git plumbing over Git prose** | `status --porcelain=v2 --branch` is stable and locale-independent; parsing human-readable output is fragile. |
-| — | **`dev sync` added, `dev update` kept as an alias** | Sync is the honest name for the workflow; breaking existing scripts is not acceptable. |
+| — | **`devrepo sync` added, `devrepo update` kept as an alias** | Sync is the honest name for the workflow; breaking existing scripts is not acceptable. |
 | — | **Repository reports live in gitignored `reports/repositories/`** | Matches the deployment report convention; remote URLs are sanitized so credentials never reach disk. |
 | — | **Branch deletion requires proof of merge** | `git branch -d` only, never `-D`; stale is not the same as safe. |
 | — | **Only the fetch phase is parallel; inspection and mutation stay single-threaded** | `git fetch --prune` is read-only and network-bound, so it parallelizes safely and is where the time goes. Keeping classification and fast-forward sequential means concurrency changes speed but never decisions. |
-| — | **Runspace pool rather than `ForEach-Object -Parallel`** | DevTools supports Windows PowerShell 5.1, where `-Parallel` does not exist. The parallel scriptblock calls git directly, so no module state is copied into runspaces and the parallel path cannot drift from the sequential one. |
+| — | **Runspace pool rather than `ForEach-Object -Parallel`** | DevRepo supports Windows PowerShell 5.1, where `-Parallel` does not exist. The parallel scriptblock calls git directly, so no module state is copied into runspaces and the parallel path cannot drift from the sequential one. |
 
 ---
 
 ## Guidance for AI Assistants
 
-When assisting with DevTools:
+When assisting with DevRepo:
 
 - Read `PROJECT_CONTEXT.md` before making recommendations.
 - Treat this file as the project's internal source of truth.
@@ -472,9 +472,9 @@ When assisting with DevTools:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File ./tests/Test-DevTools.ps1
-.\dev.cmd
-.\dev.cmd doctor
-.\dev.cmd help
+.\devrepo.cmd
+.\devrepo.cmd doctor
+.\devrepo.cmd help
 ```
 
 ---

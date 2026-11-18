@@ -1,6 +1,6 @@
 function Test-RequireGh {
     if (-not (Test-CommandExists 'gh')) {
-        ShowError 'GitHub CLI is not installed yet. Run Doctor to install or set it up.'
+        ShowError 'GitHub CLI is not installed yet. Run devrepo doctor to install or set it up.'
         return $false
     }
 

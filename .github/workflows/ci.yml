@@ -1,4 +1,4 @@
-name: DevTools CI
+name: DevRepo CI
 
 on:
   push:
@@ -6,13 +6,17 @@ on:
 
 jobs:
   validate:
-    name: Validate DevTools
+    name: Validate DevRepo (${{ matrix.shell }})
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [pwsh, powershell]
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Run DevTools tests
-        shell: pwsh
+      - name: Run DevRepo tests
+        shell: ${{ matrix.shell }}
         run: ./tests/Test-DevTools.ps1

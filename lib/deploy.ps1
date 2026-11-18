@@ -50,7 +50,7 @@ function Get-DeploymentPrerequisites {
 function Show-DeploymentPrerequisites {
     <#
     .SYNOPSIS
-        Prints the Deployment Tools readiness block used by Doctor and dev deploy.
+        Prints the Deployment Tools readiness block used by Doctor and devrepo deploy.
     #>
     param($State)
 
@@ -69,7 +69,7 @@ function Show-DeploymentPrerequisites {
     Write-Host ''
 
     if (-not $State.GhInstalled -or -not $State.GhAuthenticated) {
-        ShowInfo 'Run: dev doctor  (installs GitHub CLI and signs you in)'
+        ShowInfo 'Run: devrepo doctor  (installs GitHub CLI and signs you in)'
     }
 
     if (-not $State.VercelReady) {
@@ -92,9 +92,9 @@ function Show-VercelSetupHelp {
     ShowInfo '1. Create a token at https://vercel.com/account/tokens'
     ShowInfo '2. In PowerShell, set it for this session:'
     ShowInfo '     $env:VERCEL_TOKEN = "your-token"'
-    ShowInfo '3. Run: dev deploy audit'
+    ShowInfo '3. Run: devrepo deploy audit'
     Write-Host ''
-    ShowInfo 'DevTools never stores your token. It is read from the environment only.'
+    ShowInfo 'DevRepo never stores your token. It is read from the environment only.'
     ShowInfo 'To keep it across sessions, add it to your user environment variables.'
     ShowInfo 'Anything on your computer can read a persisted variable, so treat it like a password.'
     Write-Host ''
@@ -117,7 +117,7 @@ function Get-DeploymentOwners {
 function Invoke-DeploymentPacing {
     <#
     .SYNOPSIS
-        Short pause between API calls so DevTools never floods GitHub or Vercel.
+        Short pause between API calls so DevRepo never floods GitHub or Vercel.
     #>
     param([int]$Milliseconds)
 
@@ -390,7 +390,7 @@ function Save-DeploymentAuditReport {
 function Invoke-DeploymentAuditCommand {
     <#
     .SYNOPSIS
-        dev deploy audit — READ-ONLY portfolio audit.
+        devrepo deploy audit — READ-ONLY portfolio audit.
     #>
     param(
         [Parameter(Mandatory = $true)]$ConfigObject,
@@ -423,7 +423,7 @@ function Invoke-DeploymentAuditCommand {
     Show-DeploymentReportLocation -SaveResult (Save-DeploymentAuditReport -Audit $audit -Operation 'audit')
 
     Write-Host ''
-    ShowInfo 'Nothing was changed. Run: dev deploy plan'
+    ShowInfo 'Nothing was changed. Run: devrepo deploy plan'
 
     return 0
 }
@@ -477,7 +477,7 @@ function Show-DeploymentPlan {
         Write-Host ''
         Write-Host 'Needs Your Review' -ForegroundColor Cyan
         Write-Host ''
-        ShowInfo 'DevTools will not change these automatically.'
+        ShowInfo 'DevRepo will not change these automatically.'
         Write-Host ''
 
         foreach ($candidate in @($Plan.Review)) {
@@ -494,7 +494,7 @@ function Show-DeploymentPlan {
 function Invoke-DeploymentPlanCommand {
     <#
     .SYNOPSIS
-        dev deploy plan — READ-ONLY dry run of the proposed changes.
+        devrepo deploy plan — READ-ONLY dry run of the proposed changes.
     #>
     param(
         [Parameter(Mandatory = $true)]$ConfigObject,
@@ -504,7 +504,7 @@ function Invoke-DeploymentPlanCommand {
     $deploymentConfig = Get-DeploymentConfig -ConfigObject $ConfigObject
 
     ShowCommandScreen -Heading 'Deployment Sync Plan' -Description @(
-        'Exactly what DevTools would create if you ran sync.'
+        'Exactly what DevRepo would create if you ran sync.'
         'This is read-only. Nothing is created, deployed, or changed.'
     )
 
@@ -527,7 +527,7 @@ function Invoke-DeploymentPlanCommand {
 
     Write-Host ''
     ShowSuccess 'NO CHANGES HAVE BEEN MADE.'
-    ShowInfo 'Run: dev deploy sync'
+    ShowInfo 'Run: devrepo deploy sync'
     ShowInfo 'to review and apply this plan.'
 
     return 0
@@ -647,7 +647,7 @@ function Invoke-DeploymentTriggerAction {
 
     $deployment = $null
 
-    # For a project DevTools just created, any deployment means Vercel started the
+    # For a project DevRepo just created, any deployment means Vercel started the
     # first build itself. For an existing project only a production deployment
     # counts, so a preview build is never mistaken for the production one.
     $existing = Get-VercelProjectDeploymentCount -ProjectId $Project.Id -TeamId $TeamId -ProductionOnly:(-not $CreatedNow)
@@ -689,7 +689,7 @@ function Invoke-DeploymentTriggerAction {
     if ($null -eq $final) { $final = $deployment }
 
     if ($waited.Error) {
-        return [pscustomobject]@{ Status = 'ACTION_FAILED'; Detail = 'DevTools lost track of the deployment.'; Error = $waited.Error; Deployment = $final }
+        return [pscustomobject]@{ Status = 'ACTION_FAILED'; Detail = 'DevRepo lost track of the deployment.'; Error = $waited.Error; Deployment = $final }
     }
 
     if ($waited.TimedOut) {
@@ -745,7 +745,7 @@ function Invoke-DeploymentSyncApply {
         }
         catch {
             $candidate.Status = 'ACTION_FAILED'
-            $candidate.Detail = 'DevTools could not finish this repository.'
+            $candidate.Detail = 'DevRepo could not finish this repository.'
             $candidate.Error = $_.Exception.Message
         }
 
@@ -782,7 +782,7 @@ function Invoke-DeploymentSyncApply {
         }
         catch {
             $candidate.Status = 'ACTION_FAILED'
-            $candidate.Detail = 'DevTools could not finish this repository.'
+            $candidate.Detail = 'DevRepo could not finish this repository.'
             $candidate.Error = $_.Exception.Message
         }
 
@@ -797,7 +797,7 @@ function Invoke-DeploymentSyncApply {
 function Invoke-DeploymentSyncCommand {
     <#
     .SYNOPSIS
-        dev deploy sync — the only mutating Deployment Manager command.
+        devrepo deploy sync — the only mutating Deployment Manager command.
     #>
     param(
         [Parameter(Mandatory = $true)]$ConfigObject,
@@ -883,7 +883,7 @@ function Invoke-DeploymentSyncCommand {
 function Invoke-DeploymentVerifyCommand {
     <#
     .SYNOPSIS
-        dev deploy verify — READ-ONLY production verification.
+        devrepo deploy verify — READ-ONLY production verification.
     #>
     param(
         [Parameter(Mandatory = $true)]$ConfigObject,
@@ -956,7 +956,7 @@ function Invoke-DeploymentVerifyCommand {
 function Invoke-DeploymentStatusCommand {
     <#
     .SYNOPSIS
-        dev deploy status — Deployment Manager settings and readiness. Read-only.
+        devrepo deploy status — Deployment Manager settings and readiness. Read-only.
     #>
     param([Parameter(Mandatory = $true)]$ConfigObject)
 
@@ -1013,13 +1013,13 @@ function Show-DeploymentHelp {
     )
 
     ShowSection -Label 'Commands'
-    ShowInfo 'dev deploy           Interactive Deployment Manager'
-    ShowInfo 'dev deploy audit     Compare GitHub and Vercel (changes nothing)'
-    ShowInfo 'dev deploy plan      Show exactly what sync would create (changes nothing)'
-    ShowInfo 'dev deploy sync      Create missing projects after you approve'
-    ShowInfo 'dev deploy verify    Check production deployments (changes nothing)'
-    ShowInfo 'dev deploy status    Show deployment settings and readiness'
-    ShowInfo 'dev deploy help      This screen'
+    ShowInfo 'devrepo deploy           Interactive Deployment Manager'
+    ShowInfo 'devrepo deploy audit     Compare GitHub and Vercel (changes nothing)'
+    ShowInfo 'devrepo deploy plan      Show exactly what sync would create (changes nothing)'
+    ShowInfo 'devrepo deploy sync      Create missing projects after you approve'
+    ShowInfo 'devrepo deploy verify    Check production deployments (changes nothing)'
+    ShowInfo 'devrepo deploy status    Show deployment settings and readiness'
+    ShowInfo 'devrepo deploy help      This screen'
 
     Write-Host ''
     ShowSection -Label 'What changes anything?'
@@ -1037,10 +1037,10 @@ function Show-DeploymentHelp {
 
     Write-Host ''
     ShowSection -Label 'Typical first run'
-    ShowInfo '1. dev deploy audit'
-    ShowInfo '2. dev deploy plan'
-    ShowInfo '3. dev deploy sync'
-    ShowInfo '4. dev deploy verify'
+    ShowInfo '1. devrepo deploy audit'
+    ShowInfo '2. devrepo deploy plan'
+    ShowInfo '3. devrepo deploy sync'
+    ShowInfo '4. devrepo deploy verify'
 
     Write-Host ''
     ShowSection -Label 'Existing projects'
@@ -1048,40 +1048,35 @@ function Show-DeploymentHelp {
 
     Write-Host ''
     ShowSection -Label 'Setup'
-    ShowInfo 'Vercel is optional. DevTools works fine without it.'
+    ShowInfo 'Vercel is optional. DevRepo works fine without it.'
     ShowInfo 'To connect Vercel, set the VERCEL_TOKEN environment variable.'
     ShowInfo 'See docs/deployments.md for the full guide.'
 
     return 0
 }
 
-function Show-DeploymentManagerMenu {
-    Write-Host 'Deployment Manager' -ForegroundColor Cyan
-    Write-Host ''
-    Write-Host '  1  Audit portfolio'
-    Write-Host '  2  Preview missing deployments'
-    Write-Host '  3  Sync missing Vercel projects'
-    Write-Host '  4  Verify production deployments'
-    Write-Host '  5  Deployment settings'
-    Write-Host '  6  Help'
-    Write-Host '  0  Back'
-    Write-Host ''
-    Write-Host 'Type a number and press Enter.' -ForegroundColor DarkGray
-    Write-Host ''
-}
-
 function Invoke-DeploymentManagerMenu {
     <#
     .SYNOPSIS
-        dev deploy — interactive Deployment Manager.
+        devrepo deploy — interactive Deployment Manager.
     #>
     param([Parameter(Mandatory = $true)]$ConfigObject)
 
     while ($true) {
-        ShowContextHeader -Clear
-        Show-DeploymentManagerMenu
-
-        $choice = Read-Host 'Choose an option'
+        ShowCommandScreen -Heading 'Manage deployments' -Clear -Description @(
+            'Inspect your GitHub and Vercel projects, preview changes or verify production.'
+            'Choose the sync action and approve its plan to create projects or start deployments.'
+        )
+        $choices = @(
+            [pscustomobject]@{ Key = '1'; Label = 'Audit portfolio' }
+            [pscustomobject]@{ Key = '2'; Label = 'Preview missing deployments' }
+            [pscustomobject]@{ Key = '3'; Label = 'Sync missing Vercel projects' }
+            [pscustomobject]@{ Key = '4'; Label = 'Verify production deployments' }
+            [pscustomobject]@{ Key = '5'; Label = 'Deployment settings' }
+            [pscustomobject]@{ Key = '6'; Label = 'Help' }
+            [pscustomobject]@{ Key = '0'; Label = 'Back' }
+        )
+        $choice = Read-DevRepoMenuChoice -Options $choices -BackKey '0'
 
         switch ($choice) {
             '1' { Invoke-DeploymentAuditCommand -ConfigObject $ConfigObject | Out-Null; Wait-ForKey }

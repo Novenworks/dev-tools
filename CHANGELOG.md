@@ -2,6 +2,12 @@
 
 All notable changes to DevTools are documented here.
 
+## Unreleased — DevRepo by Novenworks
+
+- Added the `devrepo` launcher alongside the compatible `dev` launcher.
+- Replaced Home with workspace readiness, local project counts and direct actions. Added keyboard navigation in supported consoles and a typed fallback.
+- Added approval before bulk downloads and updates. Setup saves existing optional settings, and self-update uses fast-forward only.
+
 ## v0.5.0
 
 **Repository Intelligence**

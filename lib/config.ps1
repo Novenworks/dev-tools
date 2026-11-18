@@ -1,25 +1,3 @@
-function Initialize-DevToolsConfig {
-    $configPath = Join-Path $DevToolsRoot 'config.json'
-    $examplePath = Join-Path $DevToolsRoot 'config.example.json'
-
-    if (-not (Test-Path $examplePath)) {
-        throw "Missing config.example.json in $DevToolsRoot"
-    }
-
-    if (Test-Path $configPath) {
-        return [pscustomobject]@{
-            Created = $false
-            Path    = $configPath
-        }
-    }
-
-    Copy-Item -Path $examplePath -Destination $configPath
-    return [pscustomobject]@{
-        Created = $true
-        Path    = $configPath
-    }
-}
-
 function Get-DefaultDevToolsConfig {
     $examplePath = Join-Path $DevToolsRoot 'config.example.json'
     return Get-Content -Path $examplePath -Raw | ConvertFrom-Json
@@ -79,7 +57,7 @@ function Import-DevToolsConfigRaw {
     $configPath = Get-DevToolsConfigPath
 
     if (-not (Test-Path $configPath)) {
-        throw 'config.json not found. Run dev to create and configure it automatically.'
+        throw 'config.json not found. Run devrepo configure to set up your workspace.'
     }
 
     $raw = Get-Content -Path $configPath -Raw | ConvertFrom-Json

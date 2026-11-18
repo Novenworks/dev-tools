@@ -1,6 +1,8 @@
-# DevTools Commands
+# DevRepo Commands
 
-Detailed command reference for DevTools.
+Both launchers use the same commands. Legacy scripts can continue to invoke `dev`. Interactive sync and clone now require explicit approval.
+
+Detailed command reference for DevRepo.
 
 For a quick overview, see the [README](../README.md).
 
@@ -10,42 +12,42 @@ For a quick overview, see the [README](../README.md).
 
 | Command | Description |
 | --- | --- |
-| `dev` | Home dashboard (default) |
-| `dev home` | Home dashboard |
-| `dev menu` | Main menu |
-| `dev quick` | Quick Actions |
-| `dev recent` | Open a recent project |
-| `dev info` | Inspect a project |
-| `dev open` | Search and open a project |
-| `dev doctor` | Development environment check |
-| `dev test` | Automated validation suite |
-| `dev self` | DevTools self-management menu |
-| `dev self test` | Same as `dev test` |
-| `dev self update` | Safely pull DevTools updates |
-| `dev self version` | Show DevTools version |
-| `dev self doctor` | Diagnose DevTools installation |
-| `dev self info` | Show install and Git details |
-| `dev self install` | Add DevTools to user PATH |
-| `dev self uninstall` | Remove DevTools from user PATH |
-| `dev self path` | PATH and launcher diagnostics |
-| `dev configure` | Guided setup wizard |
+| `devrepo` (legacy `dev`) | Home dashboard (default) |
+| `devrepo home` | Home dashboard |
+| `devrepo menu` | Main menu |
+| `devrepo quick` | Quick Actions |
+| `devrepo recent` | Open a recent project |
+| `devrepo info` | Inspect a project |
+| `devrepo open` | Search and open a project |
+| `devrepo doctor` | Development environment check |
+| `devrepo test` | Automated validation suite |
+| `devrepo self` | DevRepo self-management menu |
+| `devrepo self test` | Same as `devrepo test` |
+| `devrepo self update` | Safely pull DevRepo updates |
+| `devrepo self version` | Show DevRepo version |
+| `devrepo self doctor` | Diagnose DevRepo installation |
+| `devrepo self info` | Show install and Git details |
+| `devrepo self install` | Add DevRepo to user PATH |
+| `devrepo self uninstall` | Remove DevRepo from user PATH |
+| `devrepo self path` | PATH and launcher diagnostics |
+| `devrepo configure` | Guided setup wizard |
 | `dev settings` | Change preferences |
-| `dev clone` | Clone missing repositories |
-| `dev sync` | Refresh GitHub state and safely fast-forward repositories |
-| `dev update` | Alias for `dev sync` (kept for existing scripts) |
-| `dev status` | Repository Health overview |
-| `dev repos` | Repository maintenance menu |
-| `dev backup` | Safe backup workflow |
-| `dev deploy` | Deployment Manager (Vercel) |
-| `dev deploy audit` | Compare GitHub repositories against Vercel (read-only) |
-| `dev deploy plan` | Preview exactly what sync would create (read-only) |
-| `dev deploy sync` | Create missing Vercel projects after confirmation |
-| `dev deploy verify` | Check production deployments (read-only) |
-| `dev deploy status` | Show deployment settings and readiness (read-only) |
-| `dev deploy help` | Deployment Manager help |
-| `dev help` | Beginner-friendly help |
+| `devrepo clone` | Clone missing repositories |
+| `devrepo sync` | Confirm a remote check and fast-forward update of safe projects |
+| `devrepo update` | Alias for `devrepo sync` (kept for existing scripts) |
+| `devrepo status` | Repository Health overview |
+| `devrepo repos` | Repository maintenance menu |
+| `devrepo backup` | Safe backup workflow |
+| `devrepo deploy` | Deployment Manager (Vercel) |
+| `devrepo deploy audit` | Compare GitHub repositories against Vercel (read-only) |
+| `devrepo deploy plan` | Preview exactly what sync would create (read-only) |
+| `devrepo deploy sync` | Create missing Vercel projects after confirmation |
+| `devrepo deploy verify` | Check production deployments (read-only) |
+| `devrepo deploy status` | Show deployment settings and readiness (read-only) |
+| `devrepo deploy help` | Deployment Manager help |
+| `devrepo help` | Beginner-friendly help |
 
-Commands under **`dev self`** manage DevTools itself. They do not replace `dev doctor`, which checks your general development environment.
+Commands under **`devrepo self`** manage DevRepo itself. They do not replace `devrepo doctor`, which checks your general development environment.
 
 ---
 
@@ -53,23 +55,23 @@ Commands under **`dev self`** manage DevTools itself. They do not replace `dev d
 
 | Command | Description |
 | --- | --- |
-| `dev` / `dev home` | Home dashboard (default) |
-| `dev menu` | Main menu |
-| `dev quick` | Quick Actions for frequent tasks |
-| `dev help` | Beginner-friendly help |
+| `dev` / `devrepo home` | Home dashboard (default) |
+| `devrepo menu` | Main menu |
+| `devrepo quick` | Quick Actions for frequent tasks |
+| `devrepo help` | Beginner-friendly help |
 
 ### Quick Actions
 
 Menu options:
 
-1. Open Recent Project  
-2. Open Project Search  
-3. Repository Health  
-4. Sync Repositories  
-5. Clone Missing Repositories  
-6. Repository Maintenance  
-7. Main Menu  
-8. Exit  
+1. Recently opened
+2. Open a project
+3. Check project health
+4. Update my projects
+5. Download new projects
+6. Fix repository issues
+7. All actions
+8. Quit
 
 Returns to Quick Actions after each action unless you choose Main Menu or Exit.
 
@@ -83,9 +85,9 @@ Includes Home, Quick Actions, Recent Projects, Project Info, Doctor, Configure, 
 
 | Command | Description |
 | --- | --- |
-| `dev configure` | Guided setup wizard |
+| `devrepo configure` | Guided setup wizard |
 | `dev settings` | Change preferences one at a time |
-| `dev doctor` | Development environment check |
+| `devrepo doctor` | Development environment check |
 
 ---
 
@@ -93,18 +95,18 @@ Includes Home, Quick Actions, Recent Projects, Project Info, Doctor, Configure, 
 
 | Command | Description |
 | --- | --- |
-| `dev clone` | Download missing GitHub repositories |
-| `dev sync` | Refresh GitHub state and safely fast-forward repositories |
-| `dev update` | Alias for `dev sync` |
-| `dev status` | Repository Health across the workspace |
-| `dev repos` | Repository maintenance menu |
-| `dev backup` | Review changed repos and back up safely |
+| `devrepo clone` | Preview and confirm downloads of missing GitHub projects |
+| `devrepo sync` | Confirm a remote check and fast-forward update of safe projects |
+| `devrepo update` | Alias for `devrepo sync` |
+| `devrepo status` | Repository Health across the workspace |
+| `devrepo repos` | Repository maintenance menu |
+| `devrepo backup` | Review changed repos and back up safely |
 
 ---
 
 ## Repository Intelligence
 
-DevTools treats repository management as five steps rather than a bare `git pull`:
+DevRepo treats repository management as five steps rather than a bare `git pull`:
 
 **fetch → inspect → classify → safely update → report.**
 
@@ -115,13 +117,13 @@ so every screen agrees about what a repository's situation actually is.
 
 | Mode | What it does | Used by |
 | --- | --- | --- |
-| **Local status** | Reads current refs only. Fast, no network. | `dev status` on open, Project Info, Repository Actions |
-| **Refreshed status** | Runs `git fetch --prune` first, so behind/diverged/deleted-upstream states are accurate. | `dev sync`, Repository Health after choosing **R**, upstream repair, report export |
+| **Local status** | Reads current refs only. Fast, no network. | `devrepo status` on open, Project Info, Repository Actions |
+| **Refreshed status** | Runs `git fetch --prune` first, so behind/diverged/deleted-upstream states are accurate. | `devrepo sync`, Repository Health after choosing **R**, upstream repair, report export |
 
 `git fetch --prune` is read-only. It updates remote-tracking refs and removes refs whose remote
 branch was deleted. It never touches your working tree, your branches, or your history.
 
-### `dev sync`
+### `devrepo sync`
 
 Sync refreshes GitHub state for every repository, classifies it, and updates only what is provably safe.
 
@@ -211,7 +213,7 @@ Every unhealthy state answers three questions: what happened, is my local work s
 I do next. The underlying Git error is kept and shown on request or in the diagnostic report, rather
 than dumped into the normal output.
 
-### `dev status` — Repository Health
+### `devrepo status` — Repository Health
 
 Repository Health shows counts for healthy, local changes, behind, ahead, diverged, broken upstream,
 detached HEAD, conflicts, operations in progress, and remote/fetch failures. It opens on the
@@ -232,7 +234,7 @@ Filters:
 Plus **D** to show full details for the current view, **R** to refresh GitHub state, and **E** to
 export a diagnostic report.
 
-### `dev repos` — Repository Maintenance
+### `devrepo repos` — Repository Maintenance
 
 1. Sync repositories
 2. Repository health
@@ -248,13 +250,13 @@ export a diagnostic report.
 The common AI-agent situation: a branch such as `claude/rebuild-homepage` tracked
 `origin/claude/rebuild-homepage`, the pull request merged, and the remote branch was deleted.
 
-DevTools detects this, then before changing anything it confirms the working tree is clean, that no
+DevRepo detects this, then before changing anything it confirms the working tree is clean, that no
 Git operation is in progress, and — critically — whether the branch contains commits that are not
 reachable from the default branch.
 
-- **Unmerged commits exist, or the state cannot be proven:** DevTools refuses, explains why, and
+- **Unmerged commits exist, or the state cannot be proven:** DevRepo refuses, explains why, and
   leaves the repository exactly as it was.
-- **Safe:** DevTools switches to the default branch, restores its tracking branch when a remote
+- **Safe:** DevRepo switches to the default branch, restores its tracking branch when a remote
   branch exists, refreshes, and fast-forwards.
 
 The old branch is never deleted during repair. Use Branch cleanup for that, separately.
@@ -271,7 +273,7 @@ by the same generic rules; no prefix is hardcoded.
 
 ### Repository actions
 
-`dev repos` → Repository actions works on a single repository: open in your editor, open the folder,
+`devrepo repos` → Repository actions works on a single repository: open in your editor, open the folder,
 open on GitHub, repository health, refresh remote status, fetch, fast-forward pull, push, switch to
 the default branch, view branches, repair upstream, clean merged branches, and export a report.
 Project Info also links to this menu.
@@ -298,17 +300,17 @@ sanitized and truncated the same way.
 
 ## Deployments
 
-Deployment Manager compares your GitHub repositories with Vercel, onboards the ones that are missing, and verifies production. Vercel is optional — DevTools is fully usable without it.
+Deployment Manager compares your GitHub repositories with Vercel, onboards the ones that are missing, and verifies production. Vercel is optional — DevRepo is fully usable without it.
 
 | Command | Changes anything? | Description |
 | --- | --- | --- |
-| `dev deploy` | No | Interactive Deployment Manager menu |
-| `dev deploy audit` | **No** | Discover, inspect, match, and classify every candidate |
-| `dev deploy plan` | **No** | Dry run: the exact projects sync would create |
-| `dev deploy sync` | **Yes** | Create missing projects and start first deployments |
-| `dev deploy verify` | **No** | Confirm production deployments are healthy |
-| `dev deploy status` | **No** | Show deployment settings and readiness |
-| `dev deploy help` | **No** | Deployment Manager help |
+| `devrepo deploy` | No | Interactive Deployment Manager menu |
+| `devrepo deploy audit` | **No** | Discover, inspect, match, and classify every candidate |
+| `devrepo deploy plan` | **No** | Dry run: the exact projects sync would create |
+| `devrepo deploy sync` | **Yes** | Create missing projects and start first deployments |
+| `devrepo deploy verify` | **No** | Confirm production deployments are healthy |
+| `devrepo deploy status` | **No** | Show deployment settings and readiness |
+| `devrepo deploy help` | **No** | Deployment Manager help |
 
 Options:
 
@@ -321,11 +323,11 @@ Options:
 Examples:
 
 ```powershell
-dev deploy audit
-dev deploy plan
-dev deploy sync
-dev deploy verify --no-http
-dev deploy audit --owner Novenworks
+devrepo deploy audit
+devrepo deploy plan
+devrepo deploy sync
+devrepo deploy verify --no-http
+devrepo deploy audit --owner Novenworks
 ```
 
 `audit`, `plan`, `verify`, and `status` never create, deploy, or modify anything. Only `sync` mutates, and it always shows the plan and asks for confirmation first (default answer: No).
@@ -338,47 +340,47 @@ Full guide: [deployments.md](deployments.md)
 
 | Command | Description |
 | --- | --- |
-| `dev test` | Run the automated DevTools validation suite |
+| `devrepo test` | Run the automated DevRepo validation suite |
 
-`dev test` locates your DevTools installation automatically and can be run from any working directory.
+`devrepo test` locates your DevRepo installation automatically and can be run from any working directory.
 
 Example:
 
 ```powershell
-dev test
+devrepo test
 ```
 
 ---
 
 ## Global install and self-management
 
-Commands under `dev self` manage **DevTools itself** — testing, inspection, safe updates, and PATH setup. This is separate from `dev doctor`, which checks your general development environment.
+Commands under `devrepo self` manage **DevRepo itself** — testing, inspection, safe updates, and PATH setup. This is separate from `devrepo doctor`, which checks your general development environment.
 
 | Command | Description |
 | --- | --- |
-| `dev self` | Interactive menu for DevTools self-management |
-| `dev self test` | Run the same automated tests as `dev test` |
-| `dev self update` | Safely pull latest changes when the working tree is clean |
-| `dev self version` | Show DevTools version and repository URL |
-| `dev self doctor` | Diagnose this DevTools installation (files, Git status) |
-| `dev self info` | Show install path, config path, version, and Git details |
-| `dev self install` | Add DevTools to your user PATH |
-| `dev self uninstall` | Remove DevTools from your user PATH |
-| `dev self path` | Show install root, PATH status, resolved `dev`/`dev.cmd`, and PATH conflicts |
+| `devrepo self` | Interactive menu for DevRepo self-management |
+| `devrepo self test` | Run the same automated tests as `devrepo test` |
+| `devrepo self update` | Safely pull latest changes when the working tree is clean |
+| `devrepo self version` | Show DevRepo version and repository URL |
+| `devrepo self doctor` | Diagnose this DevRepo installation (files, Git status) |
+| `devrepo self info` | Show install path, config path, version, and Git details |
+| `devrepo self install` | Add DevRepo to your user PATH |
+| `devrepo self uninstall` | Remove DevRepo from your user PATH |
+| `devrepo self path` | Show install root, PATH status, resolved `dev`/`dev.cmd`, and PATH conflicts |
 
 Examples:
 
 ```powershell
-dev self
-dev self test
-dev self version
-dev self doctor
-dev self install
-dev self path
-dev self uninstall
+devrepo self
+devrepo self test
+devrepo self version
+devrepo self doctor
+devrepo self install
+devrepo self path
+devrepo self uninstall
 ```
 
-Install DevTools globally with:
+Install DevRepo globally with:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File install.ps1
@@ -386,7 +388,7 @@ powershell -ExecutionPolicy Bypass -File install.ps1
 
 Then close and reopen PowerShell and run `dev`.
 
-`dev self update` refuses to pull when you have uncommitted local changes. It does not reset, discard, commit, or push.
+`devrepo self update` refuses to pull when you have uncommitted local changes. It does not reset, discard, commit, or push.
 
 Only the **User** PATH is modified. Admin privileges are not required.
 
@@ -398,11 +400,11 @@ See [installation.md](installation.md) for the full install guide.
 
 | Command | Description |
 | --- | --- |
-| `dev open` | Search and open a project |
-| `dev open <name>` | Open a project by partial name |
-| `dev recent` | Open a recently used project |
-| `dev info` | Inspect a project interactively |
-| `dev info <name>` | Inspect a project by partial name |
+| `devrepo open` | Search and open a project |
+| `devrepo open <name>` | Open a project by partial name |
+| `devrepo recent` | Open a recently used project |
+| `devrepo info` | Inspect a project interactively |
+| `devrepo info <name>` | Inspect a project by partial name |
 
 ### Open Project search
 
@@ -414,28 +416,28 @@ See [installation.md](installation.md) for the full install guide.
 Examples:
 
 ```powershell
-dev open
-dev open walkreplay
-dev open loopforge
+devrepo open
+devrepo open walkreplay
+devrepo open loopforge
 ```
 
 ### Recent Projects
 
-DevTools tracks up to 10 recently opened projects in `config/recent-projects.json` (local, not committed).
+DevRepo tracks up to 10 recently opened projects in `config/recent-projects.json` (local, not committed).
 
 Examples:
 
 ```powershell
-dev recent
+devrepo recent
 ```
 
 On Home, press **O** to open a recent project when the list is shown.
 
 ### Home dashboard
 
-When all required checks pass, Home shows **Ready to Build** and *Everything required is ready.*
+Home shows the active workspace path, Git and GitHub readiness, configured editor availability and local project counts. Repository counts are based on the shared status engine and known tracking refs. Ordinary folders are included in the total project count.
 
-Status symbols use emoji when the terminal supports Unicode and ASCII fallbacks otherwise. Environment overrides: `DEVTOOLS_ASCII=1`, `DEVTOOLS_FORCE_UNICODE=1`.
+Use arrows and Enter, number or letter shortcuts, or Esc in supported consoles. The fallback accepts a shortcut or `Back`. Project search uses `:back` to leave the text prompt.
 
 ### Project Info
 
@@ -444,8 +446,8 @@ Shows location, Git status, branch, remote, last commit, inferred stack, and qui
 Examples:
 
 ```powershell
-dev info
-dev info walkreplay
+devrepo info
+devrepo info walkreplay
 ```
 
 Project Info is read-only. It does not modify files, install packages, or run dev servers.
@@ -460,8 +462,8 @@ Project Info is read-only. It does not modify files, install packages, or run de
 - Existing healthy Vercel projects are never modified, renamed, redeployed, or disconnected
 - Clone skips existing folders
 - Bulk sync is fast-forward only and never creates a merge commit
-- DevTools never runs `git reset`, `git clean`, `git stash`, or any force operation
-- DevTools never resolves conflicts, merges or rebases diverged histories, commits, or pushes without an explicit action
+- DevRepo never runs `git reset`, `git clean`, `git stash`, or any force operation
+- DevRepo never resolves conflicts, merges or rebases diverged histories, commits, or pushes without an explicit action
 - Unsafe repositories are skipped and explained, never modified
 - Upstream repair refuses to switch branches when unmerged commits exist, and never deletes a branch
 - Branch cleanup never force-deletes and never deletes a branch Git cannot prove is merged

@@ -27,22 +27,22 @@ function Get-DoctorCheckCatalog {
             MissingAction   = 'Install Git to clone, update, and back up repositories.'
         }
         gh = @{
-            WhyItMatters    = 'GitHub CLI connects DevTools to your GitHub account.'
+            WhyItMatters    = 'GitHub CLI connects DevRepo to your GitHub account.'
             InstalledAction = 'Everything looks good.'
             MissingAction   = 'Install GitHub CLI to clone repositories from GitHub.'
         }
         'gh-auth' = @{
-            WhyItMatters    = 'Signing in allows DevTools to clone and update your repositories.'
+            WhyItMatters    = 'Signing in allows DevRepo to clone and update your repositories.'
             InstalledAction = 'Everything looks good.'
             MissingAction   = 'Sign in to GitHub to clone and sync your repositories.'
         }
         workspace = @{
-            WhyItMatters    = 'Your workspace is where DevTools stores and manages projects.'
+            WhyItMatters    = 'Your workspace is where DevRepo stores and manages projects.'
             InstalledAction = 'Everything looks good.'
             MissingAction   = 'Choose a workspace folder in Configure.'
         }
         configuration = @{
-            WhyItMatters    = 'Your settings tell DevTools where to work and what to sync.'
+            WhyItMatters    = 'Your settings tell DevRepo where to work and what to sync.'
             InstalledAction = 'Everything looks good.'
             MissingAction   = 'Complete the setup wizard to finish configuration.'
         }

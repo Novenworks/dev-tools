@@ -1,264 +1,180 @@
-function Get-StatusIndicator {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$OverallStatus
-    )
+function Get-DevRepoMenuOptions {
+    param([ValidateSet('home', 'menu', 'quick')][string]$Screen)
 
-    switch ($OverallStatus) {
-        'Ready to Build' { return Get-DevToolsDisplaySymbol -Name 'status-ready' }
-        'Almost Ready' { return Get-DevToolsDisplaySymbol -Name 'status-almost' }
-        default { return Get-DevToolsDisplaySymbol -Name 'status-setup' }
+    $items = switch ($Screen) {
+        'home' {
+            '1|Open a project|open'
+            '2|Update my projects|sync'
+            '3|Download new projects|clone'
+            '4|Check project health|status'
+            '5|Fix repository issues|repos'
+            '6|Recently opened|recent'
+            'D|Check my setup|doctor'
+            'M|All actions|menu'
+            'S|Settings|settings'
+            'H|Help|help'
+            'Q|Quit|quit'
+        }
+        'menu' {
+            '1|Home|home'
+            '2|Quick actions|quick'
+            '3|Recently opened|recent'
+            '4|Project details|info'
+            '5|Check my setup|doctor'
+            '6|Set up my workspace|configure'
+            '7|Settings|settings'
+            '8|Download new projects|clone'
+            '9|Update my projects|sync'
+            '10|Check project health|status'
+            '11|Fix repository issues|repos'
+            '12|Back up changes to GitHub|backup'
+            '13|Open a project|open'
+            '14|Manage deployments|deploy'
+            '15|Help|help'
+            '16|Quit|quit'
+            '0|Back|back'
+        }
+        'quick' {
+            '1|Recently opened|recent'
+            '2|Open a project|open'
+            '3|Check project health|status'
+            '4|Update my projects|sync'
+            '5|Download new projects|clone'
+            '6|Fix repository issues|repos'
+            '7|All actions|menu'
+            '8|Quit|quit'
+            '0|Back|back'
+        }
+    }
+
+    foreach ($item in $items) {
+        $key, $label, $action = $item.Split('|')
+        [pscustomobject]@{ Key = $key; Label = $label; Action = $action }
     }
 }
 
-function Get-HomeChecklistIcon {
-    param(
-        [Parameter(Mandatory = $true)][bool]$Passed,
-        [Parameter(Mandatory = $true)][bool]$Optional
-    )
+function Get-DevRepoHomeSnapshot {
+    $checks = @(Get-DevToolsRequiredChecks)
+    $projects = @()
+    $health = $null
+    $workspaceReady = $checks.Where({ $_.Id -eq 'workspace' }).Passed
+    $gitReady = $checks.Where({ $_.Id -eq 'git' }).Passed
 
-    if ($Passed) {
-        return Get-DevToolsDisplaySymbol -Name 'check-pass'
+    if ($workspaceReady) {
+        $projects = @(Get-WorkspaceProjects -WorkspacePath $Config.workspacePath)
+        if ($gitReady) {
+            if ($projects.Where({ $_.IsGit }).Count -gt 0) {
+                ShowInfo 'Checking local project health...'
+            }
+            $states = @(Get-WorkspaceRepositoryStates -WorkspacePath $Config.workspacePath)
+            $health = Get-RepositoryStateSummary -States $states
+        }
     }
 
-    if ($Optional) {
-        return Get-DevToolsDisplaySymbol -Name 'check-optional'
+    [pscustomobject]@{
+        GitReady = $gitReady
+        GitHubConnected = $checks.Where({ $_.Id -eq 'gh-auth' }).Passed
+        EditorAvailable = $checks.Where({ $_.Id -eq 'editor' }).Passed
+        WorkspaceReady = $workspaceReady
+        ProjectCount = $projects.Count
+        Health = $health
     }
-
-    return Get-DevToolsDisplaySymbol -Name 'check-fail'
 }
 
-function Show-HomeChecklist {
-    param(
-        [Parameter(Mandatory = $true)]$Status
-    )
+function Show-DevRepoHome {
+    param([Parameter(Mandatory = $true)]$Snapshot)
 
-    $homeOptionalIds = @('node', 'cursor', 'claude-desktop', 'claude-code')
-    $optionalChecks = @($Status.OptionalChecks | Where-Object { $_.Id -in $homeOptionalIds })
-
-    Write-Host 'Required' -ForegroundColor DarkGray
+    Write-Host 'DEVREPO' -ForegroundColor Cyan
+    Write-Host (Get-ProductSubtitle)
+    Write-Host 'by Novenworks'
     Write-Host ''
+    Write-Host "Workspace: $($Config.workspacePath)"
 
-    foreach ($check in $Status.RequiredChecks) {
-        $icon = Get-HomeChecklistIcon -Passed $check.Passed -Optional $false
-        $color = if ($check.Passed) { 'Green' } else { 'Yellow' }
-        Write-Host "  $icon $($check.Label)" -ForegroundColor $color
+    ShowSection -Label 'System'
+    ShowInfo $(if ($Snapshot.GitReady) { 'Git ready' } else { 'Git needs setup' })
+    ShowInfo $(if ($Snapshot.GitHubConnected) { 'GitHub connected' } else { 'GitHub needs sign-in' })
+    ShowInfo $(if ($Snapshot.EditorAvailable) { 'Editor available' } else { 'Editor needs setup' })
+    if (-not ($Snapshot.GitReady -and $Snapshot.GitHubConnected -and $Snapshot.EditorAvailable)) {
+        ShowInfo 'Choose D to check setup and see how to fix it.'
     }
 
-    Write-Host ''
-    Write-Host 'Optional' -ForegroundColor DarkGray
-    Write-Host ''
-
-    foreach ($check in $optionalChecks) {
-        $icon = Get-HomeChecklistIcon -Passed $check.Passed -Optional $true
-        $color = if ($check.Passed) { 'Green' } else { 'DarkGray' }
-        Write-Host "  $icon $($check.Label)" -ForegroundColor $color
+    ShowSection -Label 'Projects'
+    if (-not $Snapshot.WorkspaceReady) {
+        ShowInfo 'Workspace folder is missing. Open Settings to choose a folder.'
     }
-
-    Write-Host ''
-}
-
-function Show-HomeStatusFocal {
-    param(
-        [Parameter(Mandatory = $true)]$Status,
-        [Parameter(Mandatory = $true)]
-        [AllowEmptyCollection()]
-        [array]$AttentionItems
-    )
-
-    $indicator = Get-StatusIndicator -OverallStatus $Status.OverallStatus
-    $statusColor = switch ($Status.OverallStatus) {
-        'Ready to Build' { 'Green' }
-        'Almost Ready' { 'Yellow' }
-        default { 'Yellow' }
-    }
-
-    Write-Host "$indicator $($Status.OverallStatus)" -ForegroundColor $statusColor
-    Write-Host ''
-
-    if ($Status.RequiredAttention -eq 0) {
-        ShowInfo 'Everything required is ready.'
-        Write-Host ''
-        return
-    }
-
-    if ($AttentionItems.Count -eq 1) {
-        ShowInfo "$($AttentionItems.Count) item needs attention."
-        Write-Host ''
-        Write-Host $AttentionItems[0].Label -ForegroundColor Cyan
-        Write-Host "  $($AttentionItems[0].StatusText)" -ForegroundColor DarkGray
-        Write-Host ''
-        return
-    }
-
-    ShowInfo 'Multiple setup items need attention.'
-    ShowInfo 'Run Doctor for details.'
-    Write-Host ''
-}
-
-function Show-HomeSummary {
-    param(
-        [Parameter(Mandatory = $true)]$Status
-    )
-
-    ShowSummary -Title 'Summary' -Lines @(
-        "Ready: $($Status.RequiredReady)"
-        "Needs Attention: $($Status.RequiredAttention)"
-        "Optional Installed: $($Status.OptionalInstalled)"
-        "Optional Missing: $($Status.OptionalMissing)"
-    )
-}
-
-function Get-HomeActionDefinitions {
-    param(
-        [Parameter(Mandatory = $true)]$Status
-    )
-
-    $attentionItems = @(Get-HomeAttentionItems)
-
-    if ($Status.RequiredAttention -eq 0) {
-        $actions = @(
-            [pscustomobject]@{ Key = '1'; Label = 'Main Menu'; Action = 'menu' }
-            [pscustomobject]@{ Key = '2'; Label = 'Quick Actions'; Action = 'quick' }
-        )
-
-        if (@(Get-RecentProjects).Count -gt 0) {
-            $actions += [pscustomobject]@{ Key = '3'; Label = 'Open Recent'; Action = 'recent' }
-            $actions += [pscustomobject]@{ Key = '4'; Label = 'Doctor'; Action = 'doctor' }
-            $actions += [pscustomobject]@{ Key = '5'; Label = 'Settings'; Action = 'settings' }
-            $actions += [pscustomobject]@{ Key = '6'; Label = 'Exit'; Action = 'exit' }
+    else {
+        ShowInfo "$($Snapshot.ProjectCount) project folders"
+        if ($null -ne $Snapshot.Health) {
+            ShowInfo ("{0} Git projects healthy, {1} need attention (local snapshot)" -f $Snapshot.Health.Healthy, $Snapshot.Health.NeedsAttention)
         }
         else {
-            $actions += [pscustomobject]@{ Key = '3'; Label = 'Doctor'; Action = 'doctor' }
-            $actions += [pscustomobject]@{ Key = '4'; Label = 'Settings'; Action = 'settings' }
-            $actions += [pscustomobject]@{ Key = '5'; Label = 'Exit'; Action = 'exit' }
+            ShowInfo 'Git is required to check project health.'
         }
-
-        return $actions
     }
 
-    if ($attentionItems.Count -eq 1) {
-        $item = $attentionItems[0]
-        $fixLabel = if ($item.Id -eq 'gh-auth') {
-            'Sign into GitHub'
+    ShowSection -Label 'Quick actions'
+}
+
+function Invoke-DevRepoNavigation {
+    param([ValidateSet('home', 'menu', 'quick')][string]$StartScreen = 'home')
+
+    $screen = $StartScreen
+    $history = [System.Collections.Generic.Stack[string]]::new()
+    $snapshot = $null
+    while ($true) {
+        Clear-Host
+        if ($screen -eq 'home') {
+            if ($null -eq $snapshot) { $snapshot = Get-DevRepoHomeSnapshot }
+            Show-DevRepoHome -Snapshot $snapshot
         }
         else {
-            "Fix $($item.Label)"
+            $heading = if ($screen -eq 'menu') { 'All actions' } else { 'Quick actions' }
+            ShowCommandScreen -Heading $heading -Description @('Choose an action for this workspace.')
         }
 
-        return @(
-            [pscustomobject]@{ Key = '1'; Label = $fixLabel; Action = 'fix-primary'; CheckId = $item.Id }
-            [pscustomobject]@{ Key = '2'; Label = 'Continue to Main Menu'; Action = 'menu' }
-            [pscustomobject]@{ Key = '3'; Label = 'Run Doctor'; Action = 'doctor' }
-            [pscustomobject]@{ Key = '4'; Label = 'Exit'; Action = 'exit' }
-        )
-    }
-
-    return @(
-        [pscustomobject]@{ Key = '1'; Label = 'Configure'; Action = 'configure' }
-        [pscustomobject]@{ Key = '2'; Label = 'Run Doctor'; Action = 'doctor' }
-        [pscustomobject]@{ Key = '3'; Label = 'Main Menu'; Action = 'menu' }
-        [pscustomobject]@{ Key = '4'; Label = 'Exit'; Action = 'exit' }
-    )
-}
-
-function Show-HomeScreen {
-    $status = Get-DevToolsSystemStatus
-    $attentionItems = @(Get-HomeAttentionItems)
-
-    ShowHomeLanding -Clear
-
-    Write-Host 'System Status' -ForegroundColor Cyan
-    Write-Host ''
-
-    Show-HomeStatusFocal -Status $status -AttentionItems $attentionItems
-    Show-HomeChecklist -Status $status
-    Show-HomeRecentProjects
-
-    $actions = @(Get-HomeActionDefinitions -Status $status)
-    ShowHomeActions -Actions $actions
-
-    Show-HomeSummary -Status $status
-
-    Write-Host ''
-    Write-Host 'Tip' -ForegroundColor Cyan
-    ShowInfo 'Run Doctor anytime for a complete system check.'
-    Write-Host ''
-
-    return [pscustomobject]@{
-        Status         = $status
-        Actions        = $actions
-        AttentionItems = $attentionItems
-    }
-}
-
-function Invoke-HomeGitHubSignIn {
-    Write-Host ''
-    Write-Host 'GitHub Login' -ForegroundColor Cyan
-    Write-Host '  Not signed in.' -ForegroundColor DarkGray
-    Write-Host ''
-    ShowInfo 'DevTools uses your GitHub account to clone and update repositories.'
-    Write-Host ''
-    Write-Host '  1  Sign in now'
-    Write-Host '  2  Later'
-    Write-Host ''
-
-    $choice = Read-Host 'Choose an option'
-
-    if ($choice -ne '1') {
-        return $false
-    }
-
-    if (-not (Test-CommandExists 'gh')) {
-        ShowInfo 'GitHub CLI is required before you can sign in.'
-        ShowInfo 'Run Doctor to install GitHub CLI first.'
-        Wait-ForKey -Message 'Press Enter to continue'
-        return $false
-    }
-
-    $previousErrorAction = $ErrorActionPreference
-    $ErrorActionPreference = 'SilentlyContinue'
-    try {
-        gh auth login
-    }
-    finally {
-        $ErrorActionPreference = $previousErrorAction
-    }
-
-    if (Test-GhAuthenticated) {
-        ShowSuccess "$(Get-DevToolsDisplaySymbol -Name 'success-mark') GitHub login successful."
-        Wait-ForKey -Message 'Press Enter to continue'
-        return $true
-    }
-
-    ShowInfo 'Sign-in may still be in progress. Run Doctor again if needed.'
-    Wait-ForKey -Message 'Press Enter to continue'
-    return $false
-}
-
-function Invoke-HomePrimaryFix {
-    param(
-        [Parameter(Mandatory = $true)][string]$CheckId
-    )
-
-    switch ($CheckId) {
-        'gh-auth' {
-            Invoke-HomeGitHubSignIn | Out-Null
+        $options = @(Get-DevRepoMenuOptions -Screen $screen)
+        $shortcuts = if ($screen -eq 'home') { @{ O = 'recent' } } else { @{} }
+        $choice = Read-DevRepoMenuChoice -Options $options -Shortcuts $shortcuts
+        $action = $shortcuts[$choice]
+        if (-not $action) {
+            $action = ($options | Where-Object { $_.Key -eq $choice } | Select-Object -First 1).Action
         }
-        'configuration' {
-            . (Join-Path $DevToolsRoot 'commands\configure.ps1')
-            $script:Config = Set-ScriptConfig
+        if ($choice -eq 'Back' -or $action -eq 'back') {
+            if ($history.Count -eq 0) { return }
+            $screen = $history.Pop()
+            continue
         }
-        'workspace' {
-            . (Join-Path $DevToolsRoot 'commands\configure.ps1')
-            $script:Config = Set-ScriptConfig
+        if ($action -eq 'quit') { return }
+        if ($action -in @('home', 'menu', 'quick')) {
+            if ($history.Count -gt 0 -and $history.Peek() -eq $action) {
+                $screen = $history.Pop()
+            }
+            else {
+                $history.Push($screen)
+                $screen = $action
+            }
+            continue
         }
-        'editor' {
-            . (Join-Path $DevToolsRoot 'commands\settings.ps1')
+
+        switch ($action) {
+            'open' { Invoke-OpenProjectFlow; Wait-ForKey }
+            'recent' { Invoke-RecentProjectsFlow; Wait-ForKey }
+            'info' { Invoke-ProjectInfoFlow; Wait-ForKey }
+            'sync' { Invoke-RepositorySyncFlow | Out-Null; Wait-ForKey }
+            'clone' { & (Join-Path $DevToolsRoot 'commands/clone.ps1'); Wait-ForKey }
+            'status' { Invoke-RepositoryHealthFlow }
+            'repos' { Invoke-RepositoryMaintenanceMenu }
+            'backup' { & (Join-Path $DevToolsRoot 'commands/backup.ps1'); Wait-ForKey }
+            'doctor' { . (Join-Path $DevToolsRoot 'commands/doctor.ps1'); Wait-ForKey }
+            'configure' { . (Join-Path $DevToolsRoot 'commands/configure.ps1') }
+            'settings' { . (Join-Path $DevToolsRoot 'commands/settings.ps1') }
+            'help' { . (Join-Path $DevToolsRoot 'commands/help.ps1'); Wait-ForKey }
+            'deploy' { Invoke-DeploymentManagerMenu -ConfigObject $Config | Out-Null }
+            default { ShowWarning 'Choose a shortcut from the list.'; Wait-ForKey }
         }
-        default {
-            . (Join-Path $DevToolsRoot 'commands\doctor.ps1')
-            Wait-ForKey -Message 'Press Enter to return to Home'
+
+        if ($action -in @('sync', 'clone', 'status', 'repos', 'backup', 'doctor', 'configure', 'settings')) {
+            $snapshot = $null
         }
     }
 }

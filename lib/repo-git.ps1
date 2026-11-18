@@ -476,7 +476,7 @@ function Get-RepositoryFacts {
         }
     }
 
-    $status = Invoke-DevToolsGit -RepoPath $RepoPath -GitArgs @('status', '--porcelain=v2', '--branch', '--untracked-files=normal')
+    $status = Invoke-DevToolsGit -RepoPath $RepoPath -GitArgs @('--no-optional-locks', 'status', '--porcelain=v2', '--branch', '--untracked-files=normal')
 
     if (-not $status.Success) {
         $facts.GitError = $status.Output
